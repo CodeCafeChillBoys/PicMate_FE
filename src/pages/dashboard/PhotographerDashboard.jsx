@@ -1,28 +1,125 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Camera, DollarSign, TrendingUp, Clock, Package, Users, Settings, LogOut,
     Eye, ToggleLeft, ToggleRight, Star, MapPin, Calendar, CheckCircle, Zap, Image,
     XCircle, MessageCircle, Upload, Heart, Trash2, Filter, Plus, Maximize2
 } from 'lucide-react';
-import { mockBookings, bookingStatuses, formatPrice } from '../../data/data';
+import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { apiClient, formatPrice } from '../../services/apiClient';
+import { API_BASE_URL } from '../../services/http';
+import ChatComponent from '../../components/chat/ChatComponent';
 import './PhotographerDashboard.css';
 
 export default function PhotographerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [isOnline, setIsOnline] = useState(true);
     const [orderFilter, setOrderFilter] = useState('all');
+    const [orders, setOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [conversations, setConversations] = useState([]);
+    const [selectedChatUser, setSelectedChatUser] = useState(null);
+    const { data } = useAppData();
+    const { user } = useAuth();
+    
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showOrderDetail, setShowOrderDetail] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+
+    // Map backend BookingStatus enum names to UI status keys
+    const mapStatus = (s) => {
+        if (!s) return 'pending';
+        const lower = s.toLowerCase();
+        if (lower === 'pendingpayment' || lower === 'pendingconfirmation') return 'pending';
+        if (lower === 'confirmed') return 'confirmed';
+        if (lower === 'inprogress') return 'in_progress';
+        if (lower === 'completed') return 'completed';
+        if (lower === 'cancelled') return 'cancelled';
+        return lower;
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+        setOrdersLoading(true);
+        apiClient.getGrapherOrders()
+            .then((data) => {
+                if (!cancelled) {
+                    setOrders((data || []).map(b => ({
+                        id: b.id,
+                        photographerName: b.customerName,
+                        photographerAvatar: b.customerAvatar,
+                        service: b.serviceName,
+                        date: new Date(b.scheduledAt).toLocaleDateString('vi-VN'),
+                        time: new Date(b.scheduledAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        location: b.location,
+                        note: b.note,
+                        status: mapStatus(b.status),
+                        total: b.totalAmount,
+                        payout: b.grapherPayoutAmount,
+                    })));
+                }
+            })
+            .catch((err) => {
+                console.warn('Failed to fetch grapher orders:', err);
+                if (!cancelled) setOrders([]);
+            })
+            .finally(() => { if (!cancelled) setOrdersLoading(false); });
+
+        const fetchConversations = async () => {
+            if (!user || !user.id) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Messages/conversations`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('picmate_access_token')}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setConversations(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch conversations:', err);
+            }
+        };
+
+        fetchConversations();
+        return () => { cancelled = true; };
+    }, [user]);
+
+    const getRoleLabel = (role) => {
+        if (!role) return 'Phone-Grapher';
+        const r = String(role).toLowerCase();
+        if (r === 'photographer') return 'Phone-Grapher';
+        if (r === 'admin') return 'Administrator';
+        return 'Phone-Grapher';
+    };
+
+    const bookingStatuses = data.bookingStatuses || [];
 
     const getStatusBadge = (status) => {
-        const s = bookingStatuses.find(b => b.key === status);
-        return <span className={`badge badge-${s?.color}`}>{s?.label}</span>;
+        if (!status) return <span className="badge badge-warning">Chờ xác nhận</span>;
+        const lower = status.toLowerCase();
+        if (lower === 'pendingpayment' || lower === 'pendingconfirmation' || lower === 'pending') {
+            return <span className="badge badge-warning">⏳ Chờ xác nhận</span>;
+        } else if (lower === 'confirmed') {
+            return <span className="badge badge-info">📅 Đã nhận</span>;
+        } else if (lower === 'inprogress' || lower === 'in_progress') {
+            return <span className="badge badge-primary">📸 Đang thực hiện</span>;
+        } else if (lower === 'completed') {
+            return <span className="badge badge-success">✅ Hoàn thành</span>;
+        } else if (lower === 'cancelled') {
+            return <span className="badge badge-danger">❌ Đã hủy</span>;
+        }
+        return <span className="badge badge-secondary">{status}</span>;
     };
 
     const filteredOrders = orderFilter === 'all'
-        ? mockBookings
-        : mockBookings.filter(b => b.status === orderFilter);
+        ? orders
+        : orders.filter(b => b.status === orderFilter);
 
-    const pendingCount = mockBookings.filter(b => b.status === 'pending').length;
-    const confirmedCount = mockBookings.filter(b => b.status === 'confirmed').length;
+    const pendingCount = orders.filter(b => b.status === 'pending').length;
+    const confirmedCount = orders.filter(b => b.status === 'confirmed').length;
 
     const stats = [
         { label: 'Doanh thu tháng', value: '3,200,000đ', icon: <DollarSign size={20} />, color: 'var(--accent-green)' },
@@ -31,16 +128,41 @@ export default function PhotographerDashboard() {
         { label: 'Lượt xem hồ sơ', value: '1,245', icon: <Eye size={20} />, color: 'var(--accent-coral)' },
     ];
 
-    const getOrderActions = (status) => {
-        switch (status) {
+    const handleViewBookingDetails = async (id) => {
+        try {
+            const detail = await apiClient.getBookingDetail(id);
+            setSelectedOrder(detail);
+            setShowOrderDetail(true);
+        } catch (err) {
+            alert("Lỗi khi tải chi tiết đơn hàng");
+        }
+    };
+
+    const handleCancelBooking = async () => {
+        try {
+            await apiClient.cancelBooking(selectedOrder.id, cancelReason);
+            alert("Từ chối / Hủy đơn hàng thành công");
+            setShowCancelModal(false);
+            setCancelReason('');
+            setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled' } : o));
+        } catch (err) {
+            alert("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+        }
+    };
+
+    const getOrderActions = (booking) => {
+        switch (booking.status) {
             case 'pending':
                 return (
                     <div className="order-actions">
                         <button className="btn btn-primary btn-sm">
                             <CheckCircle size={14} /> Xác nhận
                         </button>
-                        <button className="btn btn-ghost btn-sm order-cancel-btn">
+                        <button className="btn btn-ghost btn-sm order-cancel-btn" onClick={() => { setSelectedOrder(booking); setShowCancelModal(true); }}>
                             <XCircle size={14} /> Từ chối
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
+                            Chi tiết
                         </button>
                     </div>
                 );
@@ -50,8 +172,11 @@ export default function PhotographerDashboard() {
                         <button className="btn btn-primary btn-sm">
                             <CheckCircle size={14} /> Hoàn thành
                         </button>
-                        <button className="btn btn-ghost btn-sm">
+                        <button className="btn btn-ghost btn-sm" onClick={() => setSelectedChatUser({ id: '22222222-2222-2222-2222-222222222222', fullName: 'Khách hàng', role: 'Customer' })}>
                             <MessageCircle size={14} /> Liên hệ
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
+                            Chi tiết
                         </button>
                     </div>
                 );
@@ -61,18 +186,27 @@ export default function PhotographerDashboard() {
                         <button className="btn btn-primary btn-sm">
                             <CheckCircle size={14} /> Hoàn thành
                         </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
+                            Chi tiết
+                        </button>
                     </div>
                 );
             case 'completed':
                 return (
                     <div className="order-actions">
                         <span className="badge badge-success">✅ Đã hoàn thành</span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
+                            Chi tiết
+                        </button>
                     </div>
                 );
             case 'cancelled':
                 return (
                     <div className="order-actions">
                         <span className="badge badge-danger">❌ Đã hủy</span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
+                            Chi tiết
+                        </button>
                     </div>
                 );
             default:
@@ -86,9 +220,9 @@ export default function PhotographerDashboard() {
                 <div className="dashboard-layout">
                     <aside className="dashboard-sidebar">
                         <div className="dashboard-profile">
-                            <img src="https://scontent.fsgn7-1.fna.fbcdn.net/v/t39.30808-1/464473353_3769519109932670_1565250063960609805_n.jpg?stp=cp6_dst-jpg_s200x200_tt6&_nc_cat=105&ccb=1-7&_nc_sid=1d2534&_nc_ohc=lbRrefC4c2IQ7kNvwHmzsRn&_nc_oc=AdmL0Ye0JN88RvvXis9Sv2pnD8MeFBf_bJKGBOxzDyIMvH4czWRQTD6MejMaqLp9wt_1SRuUScRO_fvqxPlXBd0n&_nc_zt=24&_nc_ht=scontent.fsgn7-1.fna&_nc_gid=AkOnQUEZk2OubHikA_4cwA&_nc_ss=8&oh=00_AfwMb4fXvhU1mlpW5eb5jC6_-DMKrK64ex9HbGIOMXkrxw&oe=69AC0FA7" alt="Photographer" className="avatar-lg" />
-                            <h3>Đào Nguyên Trọng</h3>
-                            <span className="badge badge-info">📸 Phone-Grapher</span>
+                            <img src={user?.avatar || 'https://via.placeholder.com/200?text=Avatar'} alt={user?.name || 'Photographer'} className="avatar-lg" />
+                            <h3>{user?.name || 'Phone-Grapher'}</h3>
+                            <span className="badge badge-info">📸 {getRoleLabel(user?.role)}</span>
                         </div>
 
                         <div className="online-toggle" id="online-toggle">
@@ -102,6 +236,7 @@ export default function PhotographerDashboard() {
                             {[
                                 { key: 'overview', icon: <TrendingUp size={18} />, label: 'Tổng quan' },
                                 { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng', badge: pendingCount },
+                                { key: 'messages', icon: <MessageCircle size={18} />, label: 'Tin nhắn', badge: conversations.length },
                                 { key: 'portfolio', icon: <Image size={18} />, label: 'Portfolio' },
                                 { key: 'settings', icon: <Settings size={18} />, label: 'Cài đặt' },
                             ].map(item => (
@@ -163,7 +298,7 @@ export default function PhotographerDashboard() {
 
                                 <h3 style={{ marginTop: 'var(--space-xl)', marginBottom: 'var(--space-md)' }}>Đơn hàng gần đây</h3>
                                 <div className="orders-list">
-                                    {mockBookings.slice(0, 2).map(booking => (
+                                    {orders.slice(0, 2).map(booking => (
                                         <div key={booking.id} className={`order-card order-status-${booking.status}`}>
                                             <div className="order-card-header">
                                                 <div className="order-photographer">
@@ -182,7 +317,7 @@ export default function PhotographerDashboard() {
                                                 <span className="order-id">{booking.id}</span>
                                                 <div className="order-footer-right">
                                                     <strong className="order-total">{formatPrice(booking.total)}</strong>
-                                                    {getOrderActions(booking.status)}
+                                                    {getOrderActions(booking)}
                                                 </div>
                                             </div>
                                         </div>
@@ -243,7 +378,7 @@ export default function PhotographerDashboard() {
                                                 <span className="order-id">{b.id}</span>
                                                 <div className="order-footer-right">
                                                     <strong className="order-total">{formatPrice(b.total)}</strong>
-                                                    {getOrderActions(b.status)}
+                                                    {getOrderActions(b)}
                                                 </div>
                                             </div>
                                         </div>
@@ -317,6 +452,41 @@ export default function PhotographerDashboard() {
                             </>
                         )}
 
+                        {/* ===== MESSAGES ===== */}
+                        {activeTab === 'messages' && (
+                            <>
+                                <div className="dashboard-content-header">
+                                    <h2>Tin nhắn</h2>
+                                </div>
+                                <div className="messages-list">
+                                    {conversations.length > 0 ? conversations.map(contact => (
+                                        <div 
+                                            key={contact.id} 
+                                            className="message-item" 
+                                            onClick={() => setSelectedChatUser(contact)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
+                                            <div className="message-avatar-wrap">
+                                                <img src={contact.avatarUrl || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop'} alt={contact.fullName} className="avatar" />
+                                            </div>
+                                            <div className="message-content">
+                                                <div className="message-top">
+                                                    <strong>{contact.fullName}</strong>
+                                                </div>
+                                                <p className="message-preview">Nhấn để xem tin nhắn</p>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="dashboard-placeholder">
+                                            <MessageCircle size={48} />
+                                            <h3>Chưa có tin nhắn</h3>
+                                            <p>Bạn chưa trò chuyện với khách hàng nào.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
                         {/* ===== SETTINGS ===== */}
                         {activeTab === 'settings' && (
                             <div className="dashboard-placeholder">
@@ -328,6 +498,99 @@ export default function PhotographerDashboard() {
                     </div>
                 </div>
             </div>
+            
+            {/* Real-time Chat Box Popup */}
+            {selectedChatUser && (
+                <ChatComponent 
+                    otherUser={selectedChatUser} 
+                    onClose={() => setSelectedChatUser(null)} 
+                />
+            )}
+
+            {/* Order Detail Modal */}
+            {showOrderDetail && selectedOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowOrderDetail(false); }}>
+                    <div className="modal-content" style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '12px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Chi tiết đơn hàng {selectedOrder.id.split('-')[0]}</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowOrderDetail(false)}><XCircle size={20} /></button>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Thợ chụp:</span>
+                                <strong>{selectedOrder.grapherName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Khách hàng:</span>
+                                <strong>{selectedOrder.customerName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Dịch vụ:</span>
+                                <strong>{selectedOrder.serviceName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Thời gian:</span>
+                                <strong>{new Date(selectedOrder.scheduledAt).toLocaleString('vi-VN')} ({selectedOrder.durationMinutes} phút)</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Địa điểm:</span>
+                                <strong>{selectedOrder.location}</strong>
+                            </div>
+                            {selectedOrder.note && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Ghi chú:</span>
+                                    <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-body)', borderRadius: '8px' }}>{selectedOrder.note}</div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Trạng thái:</span>
+                                {getStatusBadge(mapStatus(selectedOrder.status))}
+                            </div>
+                            {selectedOrder.status === 'Cancelled' && selectedOrder.cancellationReason && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', gap: '0.5rem', color: 'var(--accent-coral)' }}>
+                                    <span>Lý do hủy:</span>
+                                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>{selectedOrder.cancellationReason}</div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '1.2rem' }}>
+                                <strong>Tổng tiền / Nhận về:</strong>
+                                <span>
+                                    <strong style={{ color: 'var(--text-secondary)', textDecoration: 'line-through', fontSize: '1rem', marginRight: '8px' }}>{formatPrice(selectedOrder.totalAmount)}</strong>
+                                    <strong style={{ color: 'var(--primary)' }}>{formatPrice(selectedOrder.grapherPayoutAmount)}</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Modal */}
+            {showCancelModal && selectedOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowCancelModal(false); }}>
+                    <div className="modal-content" style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '90%' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Từ chối / Hủy đơn</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowCancelModal(false)}><XCircle size={20} /></button>
+                        </div>
+                        <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>Bạn có chắc chắn muốn hủy đơn của <strong>{selectedOrder.photographerName || 'Khách hàng'}</strong> không?</p>
+                        <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Lý do (không bắt buộc)</label>
+                            <textarea 
+                                className="input" 
+                                rows={3} 
+                                placeholder="Nhập lý do..."
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowCancelModal(false)}>Quay lại</button>
+                            <button className="btn btn-primary" style={{ backgroundColor: 'var(--accent-coral)' }} onClick={handleCancelBooking}>Xác nhận hủy</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

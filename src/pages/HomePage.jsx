@@ -5,12 +5,20 @@ import {
     ChevronRight, ArrowRight, Sparkles, Users, TrendingUp, Play,
     CheckCircle, Crown, Heart, Download, Eye
 } from 'lucide-react';
-import { photographers, styles, testimonials, presets, membershipPlans, formatPrice } from '../data/data';
+import { useAppData } from '../context/AppDataContext';
+import { formatPrice } from '../data/data';
 import './HomePage.css';
 
 export default function HomePage() {
     const [activeStyle, setActiveStyle] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const { data } = useAppData();
+    
+    const photographers = data.photographers || [];
+    const styles = data.styles || [];
+    const testimonials = data.testimonials || [];
+    const presets = data.presets || [];
+    const membershipPlans = data.membershipPlans || [];
 
     return (
         <div className="home-page">
@@ -124,7 +132,7 @@ export default function HomePage() {
                         {photographers.slice(0, 4).map((p, i) => (
                             <Link to={`/photographer/${p.id}`} key={p.id} className="photographer-card" id={`photographer-card-${p.id}`} style={{ animationDelay: `${i * 0.1}s` }}>
                                 <div className="photographer-card-img">
-                                    <img src={p.portfolio[0]} alt={p.name} />
+                                    <img src={p.portfolio?.[0] || p.avatar || ''} alt={p.name} />
                                     <div className="photographer-card-overlay">
                                         <span className="btn btn-sm btn-primary">Xem hồ sơ</span>
                                     </div>
@@ -239,15 +247,15 @@ export default function HomePage() {
                         <div className="instant-visual">
                             <div className="instant-map-preview">
                                 <div className="instant-pin instant-pin-1">
-                                    <img src={photographers[0].avatar} alt="" />
+                                    <img src={photographers[0]?.avatar || ''} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-pin instant-pin-2">
-                                    <img src={photographers[2].avatar} alt="" />
+                                    <img src={photographers[2]?.avatar || ''} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-pin instant-pin-3">
-                                    <img src={photographers[5].avatar} alt="" />
+                                    <img src={photographers[5]?.avatar || ''} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-center-dot" />

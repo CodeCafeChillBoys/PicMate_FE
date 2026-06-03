@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Camera, Eye, EyeOff, LogIn, Info } from 'lucide-react';
+import { Mail, Lock, User, Camera, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './AuthPage.css';
 
@@ -11,10 +11,9 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [showDemo, setShowDemo] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { login, demoAccounts } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -29,16 +28,11 @@ export default function AuthPage() {
     const result = await login(email, password);
     setLoading(false);
 
-    if (result.success) navigate(result.redirect);
+    if (result.success) navigate(result.redirect || '/');
     else setError(result.message);
   };
 
-  const handleDemoLogin = async (account) => {
-    setEmail(account.email);
-    setPassword(account.password);
-    const result = await login(account.email, account.password);
-    if (result.success) navigate(result.redirect);
-  };
+
 
   return (
     <div className="auth-page">
@@ -59,25 +53,7 @@ export default function AuthPage() {
               <button className={`auth-tab ${!isLogin ? 'active' : ''}`} onClick={() => setIsLogin(false)} id="auth-tab-register">Dang ky</button>
             </div>
 
-            <div className="demo-banner" id="demo-banner">
-              <button className="demo-banner-toggle" onClick={() => setShowDemo(!showDemo)}>
-                <Info size={16} />
-                <span>Tai khoan demo co san</span>
-              </button>
-              {showDemo && (
-                <div className="demo-accounts-list">
-                  {demoAccounts.map((acc, i) => (
-                    <button key={i} className="demo-account-btn" onClick={() => handleDemoLogin(acc)} id={`demo-login-${acc.role}`}>
-                      <div className="demo-account-info">
-                        <span className="demo-email">{acc.email}</span>
-                        <span className="demo-pass">Mat khau: {acc.password}</span>
-                      </div>
-                      <span className="demo-login-icon"><LogIn size={16} /></span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+
 
             <form className="auth-form" onSubmit={handleSubmit}>
               {!isLogin && (

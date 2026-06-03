@@ -7,7 +7,8 @@ import {
     Clock, Ban, RefreshCw, Bell, CreditCard, Globe, Zap,
     Star, MapPin, Calendar, ArrowUpRight, ArrowDownRight, MoreHorizontal
 } from 'lucide-react';
-import { photographers, mockBookings, mockUsers, mockDisputes, mockActivities, bookingStatuses, formatPrice } from '../../data/data';
+import { useAppData } from '../../context/AppDataContext';
+import { formatPrice } from '../../data/data';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -15,6 +16,14 @@ export default function AdminDashboard() {
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
     const [orderFilter, setOrderFilter] = useState('all');
+    const { data } = useAppData();
+
+    const photographers = data.photographers || [];
+    const mockBookings = data.bookings || [];
+    const mockUsers = data.mockUsers || [];
+    const mockDisputes = data.mockDisputes || [];
+    const mockActivities = data.mockActivities || [];
+    const bookingStatuses = data.bookingStatuses || [];
 
     const adminStats = [
         { label: 'Tổng người dùng', value: '12,450', icon: <Users size={20} />, color: 'var(--primary)', change: '+12%', up: true },

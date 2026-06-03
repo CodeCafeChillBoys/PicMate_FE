@@ -1,34 +1,20 @@
-﻿export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5274';
-
-async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
-
-  if (!res.ok) {
-    throw new Error(data?.message || 'API request failed');
-  }
-
-  return data;
-}
+import http from './http';
 
 export const apiClient = {
-  getBootstrap: () => request('/api/bootstrap'),
-  login: (email, password) => request('/api/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  }),
-  createBooking: (payload) => request('/api/bookings', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
+  getBootstrap: () => http.get('/api/bootstrap').then(res => res.data),
+  login: (email, password) => http.post('/api/auth/login', { email, password }).then(res => res.data),
+  me: () => http.get('/api/auth/me').then(res => res.data),
+  createBooking: (payload) => http.post('/api/bookings', payload).then(res => res.data),
+  getGrapherOrders: (status) => {
+    const params = status && status !== 'all' ? { status } : {};
+    return http.get('/api/bookings/my-orders', { params }).then(res => res.data);
+  },
+  getCustomerOrders: (customerId, status) => {
+    const params = status && status !== 'all' ? { status } : {};
+    return http.get(`/api/bookings/customer/${customerId}`, { params }).then(res => res.data);
+  },
+  cancelBooking: (id, reason) => http.post(`/api/bookings/${id}/cancel`, { reason }).then(res => res.data),
+  getBookingDetail: (id) => http.get(`/api/bookings/${id}/detail`).then(res => res.data),
 };
 
 export const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price || 0)}đ`;

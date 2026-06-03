@@ -5,7 +5,8 @@ import {
     CheckCircle, ArrowRight, Sparkles, Filter, ChevronDown,
     Phone, MessageCircle, Navigation, Timer, Users, CreditCard
 } from 'lucide-react';
-import { photographers, services, formatPrice } from '../data/data';
+import { useAppData } from '../context/AppDataContext';
+import { formatPrice } from '../data/data';
 import './InstantPage.css';
 
 export default function InstantPage() {
@@ -13,6 +14,10 @@ export default function InstantPage() {
     const [selectedTime, setSelectedTime] = useState('now');
     const [note, setNote] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const { data } = useAppData();
+    
+    const photographers = data.photographers || [];
+    const services = data.services || [];
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedPhotographer, setSelectedPhotographer] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());

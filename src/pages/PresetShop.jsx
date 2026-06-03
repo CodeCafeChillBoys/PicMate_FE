@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Star, Download, Eye, ShoppingCart, Filter } from 'lucide-react';
-import { presets, formatPrice } from '../data/data';
+import { useAppData } from '../context/AppDataContext';
+import { formatPrice } from '../data/data';
 import './PresetShop.css';
 
 export default function PresetShop() {
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const { data } = useAppData();
+    const presets = data.presets || [];
     const categories = ['all', 'Cafe', 'Ngoài trời', 'Da sáng Hàn'];
 
     const filtered = selectedCategory === 'all'
