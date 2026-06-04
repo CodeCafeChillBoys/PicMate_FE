@@ -4,7 +4,6 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localh
 
 const http = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -42,7 +41,7 @@ http.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const resp = await axios.post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken }, { withCredentials: true });
+          const resp = await axios.post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken });
           const newToken = resp.data?.accessToken;
           if (newToken) {
             localStorage.setItem('picmate_access_token', newToken);
