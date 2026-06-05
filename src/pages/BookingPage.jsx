@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     Calendar, Clock, MapPin, Camera, FileText, ChevronLeft, ChevronRight,
@@ -7,24 +7,14 @@ import {
 import { useAppData } from '../context/AppDataContext';
 import { formatPrice } from '../data/data';
 import { apiClient } from '../services/apiClient';
+import { API_BASE_URL } from '../services/http';
 import './BookingPage.css';
 
 export default function BookingPage() {
     const { id } = useParams();
-    const { data, loading } = useAppData();
-    const photographer = data.photographers?.find(p => p.id === Number(id)) || data.photographers?.[0];
-
-    if (loading) return (
-        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
-            <p>Đang tải thông tin đặt lịch...</p>
-        </div>
-    );
-
-    if (!photographer) return (
-        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
-            <p>Không tìm thấy nhiếp ảnh gia để đặt lịch.</p>
-        </div>
-    );
+    const [photographer, setPhotographer] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [step, setStep] = useState(1);
     const [booking, setBooking] = useState({
         service: '',
@@ -35,13 +25,49 @@ export default function BookingPage() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Hardcode services since they are not returned by the API
-    // We use the seeded package ID so the backend verification passes.
-    const services = [
-        { id: '40000000-0000-0000-0000-000000000001', name: 'Chụp ngoại cảnh', description: 'Một giờ chụp bằng điện thoại, nhận ảnh trong ngày.', icon: '🌳', price: 150000 },
-        { id: '40000000-0000-0000-0000-000000000001', name: 'Chụp Studio', description: 'Một giờ chụp bằng điện thoại, nhận ảnh trong ngày.', icon: '📸', price: 150000 },
-        { id: '40000000-0000-0000-0000-000000000001', name: 'Chụp sự kiện', description: 'Một giờ chụp bằng điện thoại, nhận ảnh trong ngày.', icon: '🎉', price: 150000 },
-    ];
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/graphers/${id}`);
+                if (!response.ok) {
+                    throw new Error('Không tìm thấy nhiếp ảnh gia');
+                }
+                const data = await response.json();
+                setPhotographer(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, [id]);
+
+    if (loading) return (
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+            <p>Đang tải thông tin đặt lịch...</p>
+        </div>
+    );
+
+    if (error || !photographer) return (
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+            <p>{error || 'Không tìm thấy nhiếp ảnh gia để đặt lịch.'}</p>
+        </div>
+    );
+
+
+
+    // Use the packages from the API response
+    const services = photographer.packages && photographer.packages.length > 0 
+        ? photographer.packages.map((pkg, i) => ({
+            id: pkg.id,
+            name: pkg.name,
+            description: pkg.description,
+            icon: i === 0 ? '🌳' : (i === 1 ? '📸' : '🎉'),
+            price: pkg.price
+        }))
+        : [];
 
     const totalSteps = 4;
 
@@ -55,10 +81,9 @@ export default function BookingPage() {
             const servicePackage = services.find(s => s.name === booking.service);
             if (!servicePackage) throw new Error("Vui lòng chọn dịch vụ.");
             
-            // Note: In real app, grapher profile ID and package ID must match db
-            // We use the seeded IDs for this demo.
+            // Send the real grapherProfileId and servicePackageId
             const payload = {
-                grapherProfileId: "30000000-0000-0000-0000-000000000001", // seeded grapher
+                grapherProfileId: photographer.id, 
                 servicePackageId: servicePackage.id,
                 scheduledAt: new Date(`${booking.date}T${booking.time}:00+07:00`).toISOString(),
                 location: booking.location,
@@ -125,21 +150,29 @@ export default function BookingPage() {
                         {step === 1 && (
                             <div className="booking-step animate-fade-in-up">
                                 <h2>Chọn dịch vụ</h2>
-                                <div className="service-grid">
-                                    {services.map(s => (
-                                        <div
-                                            key={s.id}
-                                            className={`service-card ${booking.service === s.name ? 'active' : ''}`}
-                                            onClick={() => updateBooking('service', s.name)}
-                                            id={`service-${s.id}`}
-                                        >
-                                            <span className="service-icon">{s.icon}</span>
-                                            <h3>{s.name}</h3>
-                                            <p>{s.description}</p>
-                                            {booking.service === s.name && <CheckCircle size={20} className="service-check" />}
-                                        </div>
-                                    ))}
-                                </div>
+                                {services.length > 0 ? (
+                                    <div className="service-grid">
+                                        {services.map(s => (
+                                            <div
+                                                key={s.id}
+                                                className={`service-card ${booking.service === s.name ? 'active' : ''}`}
+                                                onClick={() => updateBooking('service', s.name)}
+                                                id={`service-${s.id}`}
+                                            >
+                                                <span className="service-icon">{s.icon}</span>
+                                                <h3>{s.name}</h3>
+                                                <p>{s.description}</p>
+                                                <strong style={{ color: 'var(--primary)', marginTop: '0.5rem', display: 'block' }}>{formatPrice(s.price)}</strong>
+                                                {booking.service === s.name && <CheckCircle size={20} className="service-check" />}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                        <Camera size={40} />
+                                        <p style={{ marginTop: '1rem' }}>Thợ chưa cập nhật dịch vụ. Vui lòng quay lại sau.</p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -234,7 +267,7 @@ export default function BookingPage() {
                                     <div className="confirm-divider" />
                                     <div className="confirm-row confirm-total">
                                         <span>💰 Tổng đặt cọc</span>
-                                        <strong>{formatPrice(photographer.pricing.hourly)}</strong>
+                                        <strong>{formatPrice(services.find(s => s.name === booking.service)?.price || 0)}</strong>
                                     </div>
                                 </div>
                                 <div className="escrow-notice">

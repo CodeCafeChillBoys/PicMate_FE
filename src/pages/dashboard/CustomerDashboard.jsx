@@ -4,7 +4,7 @@ import {
     User, Clock, Camera, Settings, LogOut, Star, MapPin,
     MessageCircle, Calendar, Package, CreditCard, ChevronRight,
     Heart, Bell, Shield, Lock, Crown, Zap, Eye, Search,
-    Phone, Mail, Edit3, Upload, Check, X, Send
+    Phone, Mail, Edit3, Upload, Check, X, Send, CheckCircle, XCircle
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -15,7 +15,8 @@ import ChatComponent from '../../components/chat/ChatComponent';
 import './CustomerDashboard.css';
 
 export default function CustomerDashboard() {
-    const { user } = useAuth();
+    const { data } = useAppData();
+    const { user, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('overview');
     const [orderFilter, setOrderFilter] = useState('all');
     const [notifBooking, setNotifBooking] = useState(true);
@@ -26,11 +27,15 @@ export default function CustomerDashboard() {
     const [loadingOrders, setLoadingOrders] = useState(true);
     const [conversations, setConversations] = useState([]);
     const [selectedChatUser, setSelectedChatUser] = useState(null);
-    const { data } = useAppData();
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showOrderDetail, setShowOrderDetail] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
+
+    // Profile Edit State
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [profileForm, setProfileForm] = useState({ fullName: '', avatarUrl: '' });
+    const [isProfileUpdating, setIsProfileUpdating] = useState(false);
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -49,6 +54,7 @@ export default function CustomerDashboard() {
                     };
                     return {
                         id: b.id,
+                        grapherId: b.grapherUserId,
                         photographerName: b.grapherName,
                         photographerAvatar: b.grapherAvatar || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop',
                         service: b.serviceName,
@@ -57,6 +63,7 @@ export default function CustomerDashboard() {
                         location: b.location,
                         total: b.totalAmount,
                         status: statusMap[b.status] || 'pending',
+                        rawStatus: b.status,
                         note: b.note
                     };
                 });
@@ -152,9 +159,63 @@ export default function CustomerDashboard() {
             setShowCancelModal(false);
             setCancelReason('');
             // Update local state to reflect change without re-fetching everything
-            setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled' } : o));
+            setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled', rawStatus: 'Cancelled' } : o));
         } catch (err) {
             alert("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+        }
+    };
+
+    const handleOpenProfileModal = () => {
+        setProfileForm({
+            fullName: user?.name || '',
+            avatarUrl: user?.avatar || ''
+        });
+        setShowProfileModal(true);
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsProfileUpdating(true);
+            const url = await apiClient.uploadImage(file);
+            setProfileForm({ ...profileForm, avatarUrl: url });
+        } catch (err) {
+            alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
+        } finally {
+            setIsProfileUpdating(false);
+            e.target.value = null;
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        try {
+            setIsProfileUpdating(true);
+            const response = await apiClient.updateProfile({
+                fullName: profileForm.fullName,
+                avatarUrl: profileForm.avatarUrl
+            });
+            updateUser({
+                name: response.fullName,
+                avatar: response.avatarUrl
+            });
+            alert('Cập nhật hồ sơ thành công!');
+            setShowProfileModal(false);
+        } catch (err) {
+            alert('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
+        } finally {
+            setIsProfileUpdating(false);
+        }
+    };
+
+    const handleStartBooking = async (orderId) => {
+        try {
+            await apiClient.startBooking(orderId);
+            alert("Xác nhận bắt đầu chụp thành công!");
+            setOrders(orders.map(o => o.id === orderId ? { ...o, rawStatus: 'InProgress' } : o));
+        } catch (err) {
+            alert("Lỗi khi bắt đầu đơn hàng. Vui lòng thử lại.");
         }
     };
 
@@ -165,9 +226,11 @@ export default function CustomerDashboard() {
                     {/* Sidebar */}
                     <aside className="dashboard-sidebar">
                         <div className="dashboard-profile">
-                            <div className="profile-avatar-wrapper">
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
                                 <img src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"} alt={user?.name || "User"} className="avatar-lg" />
-                                <span className="profile-online-dot"></span>
+                                <button className="btn btn-icon btn-primary" style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', padding: 0 }} onClick={handleOpenProfileModal} title="Chỉnh sửa hồ sơ">
+                                    <Edit3 size={16} />
+                                </button>
                             </div>
                             <h3>{user?.name || 'Nguyễn Văn Khách'}</h3>
                             <span className="badge badge-info">👤 Khách hàng</span>
@@ -355,6 +418,16 @@ export default function CustomerDashboard() {
                                                 <div className="order-footer-right">
                                                     <strong className="order-total">{formatPrice(booking.total)}</strong>
                                                     <div className="order-actions">
+                                                        <button className="btn btn-ghost btn-sm" onClick={() => {
+                                                            setSelectedChatUser({ id: booking.grapherId, fullName: booking.photographerName, avatarUrl: booking.photographerAvatar, role: 'Photographer' });
+                                                        }}>
+                                                            <MessageCircle size={14} /> Liên hệ
+                                                        </button>
+                                                        {booking.rawStatus === 'Confirmed' && (
+                                                            <button className="btn btn-primary btn-sm" onClick={() => handleStartBooking(booking.id)}>
+                                                                <CheckCircle size={14} /> Xác nhận bắt đầu
+                                                            </button>
+                                                        )}
                                                         {booking.status === 'completed' && (
                                                             <button className="btn btn-ghost btn-sm" id={`review-${booking.id}`}>
                                                                 <Star size={14} /> Đánh giá
@@ -428,7 +501,9 @@ export default function CustomerDashboard() {
                                                     <Link to={`/photographer/${p.id}`} className="btn btn-secondary btn-sm">
                                                         Xem hồ sơ
                                                     </Link>
-                                                    <button onClick={() => setSelectedChatUser({ id: p.userId || '11111111-1111-1111-1111-111111111111', fullName: p.name, avatarUrl: p.avatar, role: 'Photographer' })} className="btn btn-primary btn-sm">
+                                                    <button onClick={() => {
+                                                        setSelectedChatUser({ id: p.userId || '11111111-1111-1111-1111-111111111111', fullName: p.name, avatarUrl: p.avatar, role: 'Photographer' });
+                                                    }} className="btn btn-primary btn-sm">
                                                         <MessageCircle size={14} /> Chat
                                                     </button>
                                                 </div>
@@ -668,7 +743,7 @@ export default function CustomerDashboard() {
             {/* Order Detail Modal */}
             {showOrderDetail && selectedOrder && (
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowOrderDetail(false); }}>
-                    <div className="modal-content" style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '12px', maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div className="modal-content">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h3 style={{ margin: 0 }}>Chi tiết đơn hàng {selectedOrder.id.split('-')[0]}</h3>
                             <button className="btn btn-icon btn-ghost" onClick={() => setShowOrderDetail(false)}><X size={20} /></button>
@@ -723,7 +798,7 @@ export default function CustomerDashboard() {
             {/* Cancel Modal */}
             {showCancelModal && selectedOrder && (
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowCancelModal(false); }}>
-                    <div className="modal-content" style={{ backgroundColor: 'var(--bg-card)', padding: '2rem', borderRadius: '12px', maxWidth: '400px', width: '90%' }}>
+                    <div className="modal-content">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h3 style={{ margin: 0 }}>Hủy đơn hàng</h3>
                             <button className="btn btn-icon btn-ghost" onClick={() => setShowCancelModal(false)}><X size={20} /></button>
@@ -742,6 +817,37 @@ export default function CustomerDashboard() {
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
                             <button className="btn btn-ghost" onClick={() => setShowCancelModal(false)}>Quay lại</button>
                             <button className="btn btn-primary" style={{ backgroundColor: 'var(--accent-coral)' }} onClick={handleCancelBooking}>Xác nhận hủy</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Profile Edit Modal */}
+            {showProfileModal && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowProfileModal(false); }}>
+                    <div className="modal-content" style={{ maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Chỉnh sửa thông tin</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowProfileModal(false)}><X size={20} /></button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+                                <img src={profileForm.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face'} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                                <label className="btn btn-primary btn-icon" style={{ position: 'absolute', bottom: 0, right: 0, cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', padding: 0 }}>
+                                    <Upload size={16} />
+                                    <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} disabled={isProfileUpdating} />
+                                </label>
+                            </div>
+                            <div className="input-group" style={{ width: '100%' }}>
+                                <label>Họ và tên</label>
+                                <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} disabled={isProfileUpdating} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowProfileModal(false)} disabled={isProfileUpdating}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSaveProfile} disabled={isProfileUpdating || !profileForm.fullName}>
+                                {isProfileUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
+                            </button>
                         </div>
                     </div>
                 </div>

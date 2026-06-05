@@ -105,8 +105,14 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('picmate_refresh_token');
   };
 
+  const updateUser = (userData) => {
+    const updated = { ...user, ...userData };
+    setUser(updated);
+    localStorage.setItem('picmate_user', JSON.stringify(updated));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, authLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, authLoading }}>
       {children}
     </AuthContext.Provider>
   );
