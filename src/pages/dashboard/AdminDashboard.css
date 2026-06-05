@@ -860,3 +860,68 @@
         justify-content: center;
     }
 }
+
+/* ===== Revenue Summary Cards ===== */
+.admin-revenue-summary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+}
+
+.revenue-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    transition: box-shadow var(--transition-fast);
+}
+
+.revenue-card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.revenue-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.revenue-value {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ===== Card header row with loading icon ===== */
+.card-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+}
+
+/* ===== Spin animation for Loader2 ===== */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Responsive for revenue cards ===== */
+@media (max-width: 1024px) {
+    .admin-revenue-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-revenue-summary {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useAppData } from './AppDataContext';
 import { apiClient } from '../services/apiClient';
 
 const AuthContext = createContext(null);
@@ -13,7 +12,6 @@ function mapRole(raw) {
 }
 
 export function AuthProvider({ children }) {
-  const { data } = useAppData();
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('picmate_user');
