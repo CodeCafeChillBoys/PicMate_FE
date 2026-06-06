@@ -291,6 +291,30 @@ export default function PhotographerDashboard() {
         }
     };
 
+    const handleDeletePortfolio = async (index) => {
+        if (!confirm('Bạn có chắc muốn xóa ảnh này khỏi portfolio?')) return;
+        const updatedPortfolio = portfolio.filter((_, i) => i !== index);
+        try {
+            const payload = {
+                bio: grapherProfile?.bio || '',
+                location: grapherProfile?.location || '',
+                styles: grapherProfile?.styles || [],
+                portfolio: updatedPortfolio,
+                servicePackages: services.map(s => ({
+                    id: s.id || undefined,
+                    name: s.name,
+                    description: s.description,
+                    price: s.price,
+                    durationMinutes: s.durationMinutes
+                }))
+            };
+            await http.put('/api/graphers/me', payload);
+            setPortfolio(updatedPortfolio);
+        } catch (err) {
+            alert('Lỗi khi xóa ảnh portfolio: ' + (err.response?.data?.title || err.message));
+        }
+    };
+
     const handleDeleteService = async (svcId) => {
         if (!confirm('Bạn có chắc muốn xóa dịch vụ này?')) return;
         const updatedList = services.filter(s => s.id !== svcId);

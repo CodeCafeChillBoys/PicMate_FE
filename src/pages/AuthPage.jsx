@@ -60,16 +60,7 @@ export default function AuthPage() {
       } catch (err) {
         setLoading(false);
         // Safely extract validation errors if possible
-        let errorMsg = 'Lỗi khi đăng ký tài khoản!';
-        if (err.response?.data?.errors) {
-            const firstError = Object.values(err.response.data.errors)[0]?.[0];
-            if (firstError) errorMsg = firstError;
-        } else if (err.response?.data?.Error) {
-            errorMsg = err.response.data.Error;
-        } else if (err.response?.data) {
-            errorMsg = typeof err.response.data === 'string' ? err.response.data : JSON.stringify(err.response.data);
-        }
-        setError(errorMsg);
+        setError(err.message || 'Lỗi hệ thống, vui lòng thử lại.');
       }
     }
   };

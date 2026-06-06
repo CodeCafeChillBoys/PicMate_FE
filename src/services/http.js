@@ -80,6 +80,28 @@ http.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Normalize error message for all frontend consumers
+    let errorMessage = error.message;
+    if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+            errorMessage = error.response.data;
+        } else if (error.response.data.errors) {
+            errorMessage = Object.values(error.response.data.errors)[0]?.[0] || 'Dữ liệu không hợp lệ.';
+        } else {
+            errorMessage = error.response.data.Error || error.response.data.title || error.response.data.message || error.message;
+        }
+    }
+    
+    // Provide a fallback for common HTTP codes if there is no backend message
+    if (errorMessage.startsWith('Request failed with status code') || errorMessage === 'Network Error') {
+        if (error.response?.status === 400) errorMessage = 'Dữ liệu không hợp lệ.';
+        else if (error.response?.status === 401) errorMessage = 'Bạn chưa đăng nhập hoặc phiên đã hết hạn.';
+        else if (error.response?.status === 403) errorMessage = 'Bạn không có quyền thực hiện hành động này.';
+        else if (error.response?.status === 404) errorMessage = 'Không tìm thấy dữ liệu.';
+        else if (error.response?.status === 500) errorMessage = 'Lỗi hệ thống. Vui lòng thử lại sau.';
+    }
+
+    error.message = errorMessage;
     return Promise.reject(error);
   }
 );

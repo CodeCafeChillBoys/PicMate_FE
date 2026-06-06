@@ -38,6 +38,15 @@ export default function CustomerDashboard() {
     const [isProfileUpdating, setIsProfileUpdating] = useState(false);
 
     useEffect(() => {
+        if (user) {
+            setProfileForm({
+                fullName: user.name || '',
+                avatarUrl: user.avatar || ''
+            });
+        }
+    }, [user]);
+
+    useEffect(() => {
         const fetchOrders = async () => {
             if (!user || !user.id) return;
             try {
@@ -559,11 +568,12 @@ export default function CustomerDashboard() {
 
                                 <div className="profile-section">
                                     <div className="profile-avatar-section">
-                                        <div className="profile-avatar-large">
-                                            <img src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"} alt="Avatar" />
-                                            <button className="profile-avatar-edit" id="profile-change-avatar">
+                                        <div className="profile-avatar-large" style={{ position: 'relative' }}>
+                                            <img src={profileForm.avatarUrl || user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"} alt="Avatar" />
+                                            <label className="profile-avatar-edit" style={{ cursor: 'pointer' }}>
                                                 <Upload size={16} />
-                                            </button>
+                                                <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={isProfileUpdating} />
+                                            </label>
                                         </div>
                                         <div className="profile-avatar-info">
                                             <h3>{user?.name || 'Nguyễn Văn Khách'}</h3>
@@ -576,7 +586,7 @@ export default function CustomerDashboard() {
                                         <div className="profile-form-row">
                                             <div className="input-group">
                                                 <label><User size={14} /> Họ tên</label>
-                                                <input className="input" defaultValue={user?.name || 'Nguyễn Văn Khách'} id="profile-fullname" />
+                                                <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} id="profile-fullname" disabled={isProfileUpdating} />
                                             </div>
                                             <div className="input-group">
                                                 <label><Mail size={14} /> Email</label>
@@ -597,8 +607,8 @@ export default function CustomerDashboard() {
                                             <label><Edit3 size={14} /> Giới thiệu</label>
                                             <textarea className="input profile-bio" defaultValue="Mình yêu thích chụp ảnh phong cách Hàn Quốc và thường xuyên sử dụng dịch vụ của PICMate." id="profile-bio" rows={4} />
                                         </div>
-                                        <button className="btn btn-primary" id="dash-save-profile">
-                                            <Check size={16} /> Lưu thay đổi
+                                        <button className="btn btn-primary" onClick={handleSaveProfile} disabled={isProfileUpdating || !profileForm.fullName}>
+                                            <Check size={16} /> {isProfileUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
                                         </button>
                                     </div>
                                 </div>

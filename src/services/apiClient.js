@@ -37,7 +37,18 @@ export const apiClient = {
       body: formData
     });
     
-    if (!res.ok) throw new Error('Network response was not ok');
+    if (!res.ok) {
+        let errorMsg = 'Lỗi hệ thống khi tải ảnh lên.';
+        try {
+            const errData = await res.json();
+            errorMsg = errData.Error || errData.title || errData.message || errorMsg;
+        } catch {
+            if (res.status === 401) errorMsg = 'Bạn chưa đăng nhập hoặc phiên đã hết hạn.';
+            else if (res.status === 400) errorMsg = 'File ảnh không hợp lệ.';
+            else if (res.status === 413) errorMsg = 'File ảnh quá lớn.';
+        }
+        throw new Error(errorMsg);
+    }
     const data = await res.json();
     return data.url;
   },
