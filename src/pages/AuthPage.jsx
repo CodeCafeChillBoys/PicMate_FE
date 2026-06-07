@@ -48,7 +48,7 @@ export default function AuthPage() {
           Email: email,
           Password: password,
           PhoneNumber: phoneNumber,
-          Role: role
+          Role: role === 'photographer' ? 'grapher' : role
         });
         setLoading(false);
         setSuccessMsg('Đăng ký thành công! Đang chuyển sang đăng nhập...');
