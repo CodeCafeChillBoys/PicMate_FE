@@ -49,16 +49,16 @@ export default function Navbar() {
             case 'photographer':
                 return [
                     { path: '/', label: 'Trang chủ' },
-                    { path: '/dashboard/photographer', label: '📋 Đơn hàng' },
+                    { path: '/photographer-dashboard', label: '📋 Đơn hàng' },
                     { path: '/presets', label: 'Preset Shop' },
                     { path: '/explore', label: 'Khám phá' },
                 ];
             case 'admin':
                 return [
-                    { path: '/admin', label: '🏠 Tổng quan' },
-                    { path: '/admin', label: '👥 Người dùng' },
-                    { path: '/admin', label: '📸 Phone-Graphers' },
-                    { path: '/admin', label: '📦 Đơn hàng' },
+                    { path: '/admin-dashboard', label: '🏠 Tổng quan' },
+                    { path: '/admin-dashboard', label: '👥 Người dùng' },
+                    { path: '/admin-dashboard', label: '📸 Phone-Graphers' },
+                    { path: '/admin-dashboard', label: '📦 Đơn hàng' },
                 ];
             default: // customer
                 return [
@@ -78,11 +78,11 @@ export default function Navbar() {
     };
 
     const getDashboardPath = () => {
-        if (!user) return '/dashboard';
+        if (!user) return '/customer-dashboard';
         switch (user.role) {
-            case 'admin': return '/admin';
-            case 'photographer': return '/dashboard/photographer';
-            default: return '/dashboard';
+            case 'admin': return '/admin-dashboard';
+            case 'photographer': return '/photographer-dashboard';
+            default: return '/customer-dashboard';
         }
     };
 

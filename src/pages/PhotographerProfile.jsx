@@ -1,23 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     Star, MapPin, CheckCircle, Camera, Clock, CreditCard, MessageCircle,
     Calendar, ChevronLeft, Heart, Share2, Shield, Zap, X, Award
 } from 'lucide-react';
-import { photographers, formatPrice } from '../data/data';
+import { useAppData } from '../context/AppDataContext';
+import { formatPrice } from '../data/data';
+import { API_BASE_URL } from '../services/http';
+import ChatComponent from '../components/chat/ChatComponent';
 import './PhotographerProfile.css';
 
 export default function PhotographerProfile() {
     const { id } = useParams();
-    const photographer = photographers.find(p => p.id === Number(id)) || photographers[0];
+    const [photographer, setPhotographer] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('portfolio');
     const [selectedImage, setSelectedImage] = useState(null);
+    const [showChat, setShowChat] = useState(false);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/graphers/${id}`);
+                if (!response.ok) {
+                    throw new Error('Không tìm thấy nhiếp ảnh gia');
+                }
+                const data = await response.json();
+                setPhotographer(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, [id]);
+
+    if (loading) return (
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+            <p>Đang tải hồ sơ...</p>
+        </div>
+    );
+
+    if (error || !photographer) return (
+        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+            <p>{error || 'Không tìm thấy nhiếp ảnh gia.'}</p>
+        </div>
+    );
 
     return (
         <div className="profile-page">
             {/* Cover */}
             <div className="profile-cover">
-                <img src={photographer.coverPhoto} alt="cover" />
+                <img src={photographer.coverPhoto || "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1200&h=400&fit=crop"} alt="cover" />
                 <div className="profile-cover-overlay" />
                 <div className="container profile-cover-content">
                     <Link to="/explore" className="btn btn-ghost btn-sm profile-back" id="profile-back">
@@ -49,7 +86,7 @@ export default function PhotographerProfile() {
                                         <span><Star size={16} fill="var(--accent-gold)" color="var(--accent-gold)" /> {photographer.rating} ({photographer.reviewCount} đánh giá)</span>
                                     </div>
                                     <div className="profile-tags">
-                                        {photographer.styles.map(s => (
+                                        {(photographer.styles || []).map(s => (
                                             <span key={s} className="tag tag-primary">{s}</span>
                                         ))}
                                     </div>
@@ -70,7 +107,7 @@ export default function PhotographerProfile() {
                         <div className="profile-tabs">
                             {[
                                 { key: 'portfolio', label: 'Portfolio', icon: <Camera size={16} /> },
-                                { key: 'reviews', label: `Đánh giá (${photographer.reviews.length})`, icon: <Star size={16} /> },
+                                { key: 'reviews', label: `Đánh giá (${photographer.reviews?.length || 0})`, icon: <Star size={16} /> },
                             ].map(tab => (
                                 <button
                                     key={tab.key}
@@ -87,7 +124,7 @@ export default function PhotographerProfile() {
                         {activeTab === 'portfolio' && (
                             <div className="profile-portfolio">
                                 <div className="portfolio-grid">
-                                    {photographer.portfolio.map((img, i) => (
+                                    {(photographer.portfolio || []).map((img, i) => (
                                         <div key={i} className="portfolio-item" onClick={() => setSelectedImage(img)} id={`portfolio-${i}`}>
                                             <img src={img} alt={`Portfolio ${i + 1}`} />
                                             <div className="portfolio-overlay">
@@ -102,7 +139,7 @@ export default function PhotographerProfile() {
                         {/* Reviews */}
                         {activeTab === 'reviews' && (
                             <div className="profile-reviews">
-                                {photographer.reviews.length > 0 ? photographer.reviews.map(review => (
+                                {(photographer.reviews?.length || 0) > 0 ? photographer.reviews.map(review => (
                                     <div key={review.id} className="review-card">
                                         <div className="review-header">
                                             <img src={review.avatar} alt={review.user} className="avatar" />
@@ -134,43 +171,35 @@ export default function PhotographerProfile() {
                             <h3>Bảng giá dịch vụ</h3>
 
                             <div className="pricing-list">
-                                <div className="pricing-item">
-                                    <div className="pricing-item-info">
-                                        <Camera size={18} />
-                                        <div>
-                                            <strong>Chụp ảnh theo giờ</strong>
-                                            <span>Chụp chân dung, sống ảo, couple</span>
+                                {photographer.packages && photographer.packages.length > 0 ? photographer.packages.map(pkg => (
+                                    <div key={pkg.id} className="pricing-item">
+                                        <div className="pricing-item-info">
+                                            <Camera size={18} />
+                                            <div>
+                                                <strong>{pkg.name}</strong>
+                                                <span>{pkg.description}</span>
+                                            </div>
+                                        </div>
+                                        <strong className="pricing-value">{formatPrice(pkg.price)}</strong>
+                                    </div>
+                                )) : (
+                                    <div className="pricing-item">
+                                        <div className="pricing-item-info">
+                                            <Camera size={18} />
+                                            <div>
+                                                <strong>Chưa có dịch vụ</strong>
+                                                <span>Thợ chưa cập nhật giá</span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <strong className="pricing-value">{formatPrice(photographer.pricing.hourly)}/giờ</strong>
-                                </div>
-                                <div className="pricing-item">
-                                    <div className="pricing-item-info">
-                                        <Award size={18} />
-                                        <div>
-                                            <strong>Chỉnh ảnh</strong>
-                                            <span>Edit màu, retouch da mịn</span>
-                                        </div>
-                                    </div>
-                                    <strong className="pricing-value">{formatPrice(photographer.pricing.perPhoto)}/ảnh</strong>
-                                </div>
-                                <div className="pricing-item">
-                                    <div className="pricing-item-info">
-                                        <Zap size={18} />
-                                        <div>
-                                            <strong>Gói TikTok Content</strong>
-                                            <span>Quay, edit, chọn nhạc</span>
-                                        </div>
-                                    </div>
-                                    <strong className="pricing-value">{formatPrice(photographer.pricing.tiktokPackage)}</strong>
-                                </div>
+                                )}
                             </div>
 
                             <Link to={`/booking/${photographer.id}`} className="btn btn-primary btn-lg profile-book-btn" id="profile-book-btn">
                                 <Calendar size={18} /> Đặt lịch ngay
                             </Link>
 
-                            <button className="btn btn-ghost btn-lg profile-chat-btn" id="profile-chat-btn">
+                            <button className="btn btn-ghost btn-lg profile-chat-btn" id="profile-chat-btn" onClick={() => setShowChat(true)}>
                                 <MessageCircle size={18} /> Nhắn tin
                             </button>
 
@@ -199,6 +228,19 @@ export default function PhotographerProfile() {
                     <button className="lightbox-close" onClick={() => setSelectedImage(null)}><X size={24} /></button>
                     <img src={selectedImage} alt="Portfolio" />
                 </div>
+            )}
+
+            {/* Chat Box */}
+            {showChat && (
+                <ChatComponent 
+                    otherUser={{
+                        id: photographer.userId || '11111111-1111-1111-1111-111111111111', 
+                        fullName: photographer.name, 
+                        avatarUrl: photographer.avatar, 
+                        role: 'Photographer'
+                    }}
+                    onClose={() => setShowChat(false)}
+                />
             )}
         </div>
     );

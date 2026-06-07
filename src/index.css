@@ -531,3 +531,34 @@ input, textarea, select {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
+
+/* ===== Modals & Lightboxes ===== */
+.lightbox {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast);
+}
+
+.modal-content {
+  background-color: var(--bg-card, var(--bg-primary));
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xl);
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: fadeInUp var(--transition-base);
+}

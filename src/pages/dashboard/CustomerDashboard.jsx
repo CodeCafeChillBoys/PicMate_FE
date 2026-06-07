@@ -1,29 +1,135 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     User, Clock, Camera, Settings, LogOut, Star, MapPin,
     MessageCircle, Calendar, Package, CreditCard, ChevronRight,
     Heart, Bell, Shield, Lock, Crown, Zap, Eye, Search,
-    Phone, Mail, Edit3, Upload, Check, X, Send
+    Phone, Mail, Edit3, Upload, Check, X, Send, CheckCircle, XCircle
 } from 'lucide-react';
-import { mockBookings, bookingStatuses, formatPrice, photographers, favoritePhotographerIds, mockMessages } from '../../data/data';
+import { useAppData } from '../../context/AppDataContext';
+import { useAuth } from '../../context/AuthContext';
+import { API_BASE_URL } from '../../services/http';
+import { apiClient } from '../../services/apiClient';
+import { formatPrice } from '../../data/data';
+import ChatComponent from '../../components/chat/ChatComponent';
 import './CustomerDashboard.css';
 
 export default function CustomerDashboard() {
+    const { data } = useAppData();
+    const { user, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('overview');
     const [orderFilter, setOrderFilter] = useState('all');
     const [notifBooking, setNotifBooking] = useState(true);
     const [notifMessage, setNotifMessage] = useState(true);
     const [notifPromo, setNotifPromo] = useState(false);
+    
+    const [orders, setOrders] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(true);
+    const [conversations, setConversations] = useState([]);
+    const [selectedChatUser, setSelectedChatUser] = useState(null);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showOrderDetail, setShowOrderDetail] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+
+    // Profile Edit State
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [profileForm, setProfileForm] = useState({ fullName: '', avatarUrl: '' });
+    const [isProfileUpdating, setIsProfileUpdating] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            setProfileForm({
+                fullName: user.name || '',
+                avatarUrl: user.avatar || ''
+            });
+        }
+    }, [user]);
+
+    useEffect(() => {
+        const fetchOrders = async () => {
+            if (!user || !user.id) return;
+            try {
+                setLoadingOrders(true);
+                const apiData = await apiClient.getCustomerOrders(user.id);
+                const mapped = apiData.map(b => {
+                    const statusMap = {
+                        'PendingConfirmation': 'pending',
+                        'PendingPayment': 'pending',
+                        'Confirmed': 'confirmed',
+                        'InProgress': 'confirmed',
+                        'Completed': 'completed',
+                        'Cancelled': 'cancelled'
+                    };
+                    return {
+                        id: b.id,
+                        grapherId: b.grapherUserId,
+                        photographerName: b.grapherName,
+                        photographerAvatar: b.grapherAvatar || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop',
+                        service: b.serviceName,
+                        date: new Date(b.scheduledAt).toLocaleDateString('vi-VN'),
+                        time: new Date(b.scheduledAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                        location: b.location,
+                        total: b.totalAmount,
+                        status: statusMap[b.status] || 'pending',
+                        rawStatus: b.status,
+                        note: b.note
+                    };
+                });
+                setOrders(mapped);
+            } catch (err) {
+                console.error('Failed to fetch customer orders:', err);
+            } finally {
+                setLoadingOrders(false);
+            }
+        };
+
+        const fetchConversations = async () => {
+            if (!user || !user.id) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/Messages/conversations`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('picmate_access_token')}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setConversations(data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch conversations:', err);
+            }
+        };
+
+        fetchOrders();
+        fetchConversations();
+    }, [user]);
+
+    const bookingStatuses = data.bookingStatuses || [];
+    const photographers = data.photographers || [];
+    const favoritePhotographerIds = data.favoritePhotographerIds || [];
+    const mockMessages = data.mockMessages || [];
 
     const getStatusBadge = (status) => {
-        const s = bookingStatuses.find(b => b.key === status);
-        return <span className={`badge badge-${s?.color}`}>{s?.label}</span>;
+        if (!status) return <span className="badge badge-warning">Chờ xác nhận</span>;
+        const lower = status.toLowerCase();
+        if (lower === 'pendingpayment' || lower === 'pendingconfirmation' || lower === 'pending') {
+            return <span className="badge badge-warning">⏳ Chờ xác nhận</span>;
+        } else if (lower === 'confirmed') {
+            return <span className="badge badge-info">📅 Đã nhận</span>;
+        } else if (lower === 'inprogress' || lower === 'in_progress') {
+            return <span className="badge badge-primary">📸 Đang thực hiện</span>;
+        } else if (lower === 'completed') {
+            return <span className="badge badge-success">✅ Hoàn thành</span>;
+        } else if (lower === 'cancelled') {
+            return <span className="badge badge-danger">❌ Đã hủy</span>;
+        }
+        return <span className="badge badge-secondary">{status}</span>;
     };
 
     const filteredBookings = orderFilter === 'all'
-        ? mockBookings
-        : mockBookings.filter(b => b.status === orderFilter);
+        ? orders
+        : orders.filter(b => b.status === orderFilter);
 
     const favoritePhotographers = photographers.filter(p => favoritePhotographerIds.includes(p.id));
 
@@ -34,6 +140,9 @@ export default function CustomerDashboard() {
         { label: 'Đánh giá đã gửi', value: '8', icon: <Star size={20} />, color: 'var(--accent-gold)' },
     ];
 
+    const activeOrdersCount = orders.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status?.toLowerCase())).length;
+    const messagesCount = conversations.length;
+
     const orderFilterTabs = [
         { key: 'all', label: 'Tất cả' },
         { key: 'pending', label: 'Chờ xác nhận' },
@@ -42,6 +151,83 @@ export default function CustomerDashboard() {
         { key: 'cancelled', label: 'Đã hủy' },
     ];
 
+    const handleViewBookingDetails = async (id) => {
+        try {
+            const detail = await apiClient.getBookingDetail(id);
+            setSelectedOrder(detail);
+            setShowOrderDetail(true);
+        } catch (err) {
+            alert("Lỗi khi tải chi tiết đơn hàng");
+        }
+    };
+
+    const handleCancelBooking = async () => {
+        try {
+            await apiClient.cancelBooking(selectedOrder.id, cancelReason);
+            alert("Hủy đơn hàng thành công");
+            setShowCancelModal(false);
+            setCancelReason('');
+            // Update local state to reflect change without re-fetching everything
+            setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled', rawStatus: 'Cancelled' } : o));
+        } catch (err) {
+            alert("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+        }
+    };
+
+    const handleOpenProfileModal = () => {
+        setProfileForm({
+            fullName: user?.name || '',
+            avatarUrl: user?.avatar || ''
+        });
+        setShowProfileModal(true);
+    };
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsProfileUpdating(true);
+            const url = await apiClient.uploadImage(file);
+            setProfileForm({ ...profileForm, avatarUrl: url });
+        } catch (err) {
+            alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
+        } finally {
+            setIsProfileUpdating(false);
+            e.target.value = null;
+        }
+    };
+
+    const handleSaveProfile = async () => {
+        try {
+            setIsProfileUpdating(true);
+            const response = await apiClient.updateProfile({
+                fullName: profileForm.fullName,
+                avatarUrl: profileForm.avatarUrl
+            });
+            updateUser({
+                name: response.fullName,
+                avatar: response.avatarUrl
+            });
+            alert('Cập nhật hồ sơ thành công!');
+            setShowProfileModal(false);
+        } catch (err) {
+            alert('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
+        } finally {
+            setIsProfileUpdating(false);
+        }
+    };
+
+    const handleStartBooking = async (orderId) => {
+        try {
+            await apiClient.startBooking(orderId);
+            alert("Xác nhận bắt đầu chụp thành công!");
+            setOrders(orders.map(o => o.id === orderId ? { ...o, rawStatus: 'InProgress' } : o));
+        } catch (err) {
+            alert("Lỗi khi bắt đầu đơn hàng. Vui lòng thử lại.");
+        }
+    };
+
     return (
         <div className="dashboard-page">
             <div className="container">
@@ -49,11 +235,13 @@ export default function CustomerDashboard() {
                     {/* Sidebar */}
                     <aside className="dashboard-sidebar">
                         <div className="dashboard-profile">
-                            <div className="profile-avatar-wrapper">
-                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face" alt="User" className="avatar-lg" />
-                                <span className="profile-online-dot"></span>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <img src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"} alt={user?.name || "User"} className="avatar-lg" />
+                                <button className="btn btn-icon btn-primary" style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', padding: 0 }} onClick={handleOpenProfileModal} title="Chỉnh sửa hồ sơ">
+                                    <Edit3 size={16} />
+                                </button>
                             </div>
-                            <h3>Nguyễn Văn Khách</h3>
+                            <h3>{user?.name || 'Nguyễn Văn Khách'}</h3>
                             <span className="badge badge-info">👤 Khách hàng</span>
                             <div className="profile-membership">
                                 <Crown size={14} />
@@ -63,9 +251,9 @@ export default function CustomerDashboard() {
                         <nav className="dashboard-nav">
                             {[
                                 { key: 'overview', icon: <Eye size={18} />, label: 'Tổng quan' },
-                                { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng', badge: 3 },
+                                { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng', badge: activeOrdersCount },
                                 { key: 'favorites', icon: <Heart size={18} />, label: 'Yêu thích' },
-                                { key: 'messages', icon: <MessageCircle size={18} />, label: 'Tin nhắn', badge: 3 },
+                                { key: 'messages', icon: <MessageCircle size={18} />, label: 'Tin nhắn', badge: messagesCount },
                                 { key: 'profile', icon: <User size={18} />, label: 'Hồ sơ' },
                                 { key: 'settings', icon: <Settings size={18} />, label: 'Cài đặt' },
                             ].map(item => (
@@ -77,7 +265,7 @@ export default function CustomerDashboard() {
                                 >
                                     {item.icon}
                                     <span>{item.label}</span>
-                                    {item.badge && <span className="nav-badge">{item.badge}</span>}
+                                    {item.badge > 0 && <span className="nav-badge">{item.badge}</span>}
                                 </button>
                             ))}
                             <button className="dashboard-nav-item dashboard-logout" id="dash-logout">
@@ -93,7 +281,7 @@ export default function CustomerDashboard() {
                             <>
                                 <div className="welcome-banner" id="welcome-banner">
                                     <div className="welcome-text">
-                                        <h2>Chào mừng trở lại, <span className="gradient-text">Khách</span>! 👋</h2>
+                                        <h2>Chào mừng trở lại, <span className="gradient-text">{user?.name ? user.name.split(' ').pop() : 'Khách'}</span>! 👋</h2>
                                         <p>Quản lý đơn hàng, theo dõi thợ yêu thích và trải nghiệm dịch vụ chụp ảnh Phone-Graphy tốt nhất.</p>
                                         <div className="welcome-actions">
                                             <Link to="/explore" className="btn btn-primary btn-sm" id="dash-explore">
@@ -129,7 +317,7 @@ export default function CustomerDashboard() {
                                         </button>
                                     </div>
                                     <div className="orders-list">
-                                        {mockBookings.slice(0, 2).map(booking => (
+                                        {orders.slice(0, 2).map(booking => (
                                             <div key={booking.id} className={`order-card order-status-${booking.status}`} id={`order-${booking.id}`}>
                                                 <div className="order-card-header">
                                                     <div className="order-photographer">
@@ -239,17 +427,27 @@ export default function CustomerDashboard() {
                                                 <div className="order-footer-right">
                                                     <strong className="order-total">{formatPrice(booking.total)}</strong>
                                                     <div className="order-actions">
+                                                        <button className="btn btn-ghost btn-sm" onClick={() => {
+                                                            setSelectedChatUser({ id: booking.grapherId, fullName: booking.photographerName, avatarUrl: booking.photographerAvatar, role: 'Photographer' });
+                                                        }}>
+                                                            <MessageCircle size={14} /> Liên hệ
+                                                        </button>
+                                                        {booking.rawStatus === 'Confirmed' && (
+                                                            <button className="btn btn-primary btn-sm" onClick={() => handleStartBooking(booking.id)}>
+                                                                <CheckCircle size={14} /> Xác nhận bắt đầu
+                                                            </button>
+                                                        )}
                                                         {booking.status === 'completed' && (
                                                             <button className="btn btn-ghost btn-sm" id={`review-${booking.id}`}>
                                                                 <Star size={14} /> Đánh giá
                                                             </button>
                                                         )}
                                                         {booking.status === 'pending' && (
-                                                            <button className="btn btn-ghost btn-sm order-cancel-btn" id={`cancel-${booking.id}`}>
+                                                            <button className="btn btn-ghost btn-sm order-cancel-btn" id={`cancel-${booking.id}`} onClick={() => { setSelectedOrder(booking); setShowCancelModal(true); }}>
                                                                 <X size={14} /> Hủy
                                                             </button>
                                                         )}
-                                                        <button className="btn btn-ghost btn-sm" id={`view-${booking.id}`}>
+                                                        <button className="btn btn-ghost btn-sm" id={`view-${booking.id}`} onClick={() => handleViewBookingDetails(booking.id)}>
                                                             Chi tiết <ChevronRight size={14} />
                                                         </button>
                                                     </div>
@@ -312,9 +510,11 @@ export default function CustomerDashboard() {
                                                     <Link to={`/photographer/${p.id}`} className="btn btn-secondary btn-sm">
                                                         Xem hồ sơ
                                                     </Link>
-                                                    <Link to={`/booking/${p.id}`} className="btn btn-primary btn-sm">
-                                                        <Camera size={14} /> Đặt lịch
-                                                    </Link>
+                                                    <button onClick={() => {
+                                                        setSelectedChatUser({ id: p.userId || '11111111-1111-1111-1111-111111111111', fullName: p.name, avatarUrl: p.avatar, role: 'Photographer' });
+                                                    }} className="btn btn-primary btn-sm">
+                                                        <MessageCircle size={14} /> Chat
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -331,30 +531,30 @@ export default function CustomerDashboard() {
                                 </div>
 
                                 <div className="messages-list" id="messages-list">
-                                    {mockMessages.map(msg => (
-                                        <div key={msg.id} className={`message-item ${msg.unread > 0 ? 'unread' : ''}`} id={`msg-${msg.id}`}>
+                                    {conversations.length > 0 ? conversations.map(contact => (
+                                        <div 
+                                            key={contact.id} 
+                                            className="message-item" 
+                                            onClick={() => setSelectedChatUser(contact)}
+                                            style={{ cursor: 'pointer' }}
+                                        >
                                             <div className="message-avatar-wrap">
-                                                {msg.avatar ? (
-                                                    <img src={msg.avatar} alt={msg.name} className="avatar" />
-                                                ) : (
-                                                    <div className="avatar message-system-avatar">
-                                                        <MessageCircle size={20} />
-                                                    </div>
-                                                )}
-                                                {msg.online && <span className="msg-online-dot"></span>}
+                                                <img src={contact.avatarUrl || 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop'} alt={contact.fullName} className="avatar" />
                                             </div>
                                             <div className="message-content">
                                                 <div className="message-top">
-                                                    <strong>{msg.name}</strong>
-                                                    <span className="message-time">{msg.time}</span>
+                                                    <strong>{contact.fullName}</strong>
                                                 </div>
-                                                <p className="message-preview">{msg.lastMessage}</p>
+                                                <p className="message-preview">Nhấn để xem tin nhắn</p>
                                             </div>
-                                            {msg.unread > 0 && (
-                                                <span className="message-unread-badge">{msg.unread}</span>
-                                            )}
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="dashboard-placeholder">
+                                            <MessageCircle size={48} />
+                                            <h3>Chưa có tin nhắn</h3>
+                                            <p>Bạn chưa trò chuyện với thợ chụp ảnh nào.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}
@@ -368,14 +568,15 @@ export default function CustomerDashboard() {
 
                                 <div className="profile-section">
                                     <div className="profile-avatar-section">
-                                        <div className="profile-avatar-large">
-                                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face" alt="Avatar" />
-                                            <button className="profile-avatar-edit" id="profile-change-avatar">
+                                        <div className="profile-avatar-large" style={{ position: 'relative' }}>
+                                            <img src={profileForm.avatarUrl || user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"} alt="Avatar" />
+                                            <label className="profile-avatar-edit" style={{ cursor: 'pointer' }}>
                                                 <Upload size={16} />
-                                            </button>
+                                                <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={isProfileUpdating} />
+                                            </label>
                                         </div>
                                         <div className="profile-avatar-info">
-                                            <h3>Nguyễn Văn Khách</h3>
+                                            <h3>{user?.name || 'Nguyễn Văn Khách'}</h3>
                                             <span className="badge badge-info">Premium Member</span>
                                             <p>Thành viên từ tháng 01/2025</p>
                                         </div>
@@ -385,11 +586,11 @@ export default function CustomerDashboard() {
                                         <div className="profile-form-row">
                                             <div className="input-group">
                                                 <label><User size={14} /> Họ tên</label>
-                                                <input className="input" defaultValue="Nguyễn Văn Khách" id="profile-fullname" />
+                                                <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} id="profile-fullname" disabled={isProfileUpdating} />
                                             </div>
                                             <div className="input-group">
                                                 <label><Mail size={14} /> Email</label>
-                                                <input className="input" defaultValue="khach@email.com" id="profile-email" />
+                                                <input className="input" defaultValue={user?.email || 'khach@email.com'} id="profile-email" readOnly />
                                             </div>
                                         </div>
                                         <div className="profile-form-row">
@@ -406,8 +607,8 @@ export default function CustomerDashboard() {
                                             <label><Edit3 size={14} /> Giới thiệu</label>
                                             <textarea className="input profile-bio" defaultValue="Mình yêu thích chụp ảnh phong cách Hàn Quốc và thường xuyên sử dụng dịch vụ của PICMate." id="profile-bio" rows={4} />
                                         </div>
-                                        <button className="btn btn-primary" id="dash-save-profile">
-                                            <Check size={16} /> Lưu thay đổi
+                                        <button className="btn btn-primary" onClick={handleSaveProfile} disabled={isProfileUpdating || !profileForm.fullName}>
+                                            <Check size={16} /> {isProfileUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
                                         </button>
                                     </div>
                                 </div>
@@ -540,6 +741,127 @@ export default function CustomerDashboard() {
                     </div>
                 </div>
             </div>
+            
+            {/* Real-time Chat Box Popup */}
+            {selectedChatUser && (
+                <ChatComponent 
+                    otherUser={selectedChatUser} 
+                    onClose={() => setSelectedChatUser(null)} 
+                />
+            )}
+
+            {/* Order Detail Modal */}
+            {showOrderDetail && selectedOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowOrderDetail(false); }}>
+                    <div className="modal-content">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Chi tiết đơn hàng {selectedOrder.id.split('-')[0]}</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowOrderDetail(false)}><X size={20} /></button>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Thợ chụp:</span>
+                                <strong>{selectedOrder.grapherName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Khách hàng:</span>
+                                <strong>{selectedOrder.customerName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Dịch vụ:</span>
+                                <strong>{selectedOrder.serviceName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Thời gian:</span>
+                                <strong>{new Date(selectedOrder.scheduledAt).toLocaleString('vi-VN')} ({selectedOrder.durationMinutes} phút)</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Địa điểm:</span>
+                                <strong>{selectedOrder.location}</strong>
+                            </div>
+                            {selectedOrder.note && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Ghi chú:</span>
+                                    <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-body)', borderRadius: '8px' }}>{selectedOrder.note}</div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>Trạng thái:</span>
+                                {getStatusBadge(selectedOrder.status)}
+                            </div>
+                            {selectedOrder.status === 'Cancelled' && selectedOrder.cancellationReason && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', gap: '0.5rem', color: 'var(--accent-coral)' }}>
+                                    <span>Lý do hủy:</span>
+                                    <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>{selectedOrder.cancellationReason}</div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '1.2rem' }}>
+                                <strong>Tổng tiền:</strong>
+                                <strong style={{ color: 'var(--primary)' }}>{formatPrice(selectedOrder.totalAmount)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Modal */}
+            {showCancelModal && selectedOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowCancelModal(false); }}>
+                    <div className="modal-content">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Hủy đơn hàng</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowCancelModal(false)}><X size={20} /></button>
+                        </div>
+                        <p style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>Bạn có chắc chắn muốn hủy đơn đặt lịch với <strong>{selectedOrder.photographerName}</strong> không?</p>
+                        <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Lý do hủy (không bắt buộc)</label>
+                            <textarea 
+                                className="input" 
+                                rows={3} 
+                                placeholder="Nhập lý do hủy..."
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowCancelModal(false)}>Quay lại</button>
+                            <button className="btn btn-primary" style={{ backgroundColor: 'var(--accent-coral)' }} onClick={handleCancelBooking}>Xác nhận hủy</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Profile Edit Modal */}
+            {showProfileModal && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowProfileModal(false); }}>
+                    <div className="modal-content" style={{ maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Chỉnh sửa thông tin</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowProfileModal(false)}><X size={20} /></button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', width: '120px', height: '120px' }}>
+                                <img src={profileForm.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face'} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                                <label className="btn btn-primary btn-icon" style={{ position: 'absolute', bottom: 0, right: 0, cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', padding: 0 }}>
+                                    <Upload size={16} />
+                                    <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} disabled={isProfileUpdating} />
+                                </label>
+                            </div>
+                            <div className="input-group" style={{ width: '100%' }}>
+                                <label>Họ và tên</label>
+                                <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} disabled={isProfileUpdating} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowProfileModal(false)} disabled={isProfileUpdating}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSaveProfile} disabled={isProfileUpdating || !profileForm.fullName}>
+                                {isProfileUpdating ? 'Đang lưu...' : 'Lưu thay đổi'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

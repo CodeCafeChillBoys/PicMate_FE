@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Star, SlidersHorizontal, X, Zap, CheckCircle, Filter } from 'lucide-react';
-import { photographers, styles, formatPrice } from '../data/data';
+import { useAppData } from '../context/AppDataContext';
+import { formatPrice } from '../data/data';
 import './ExplorePage.css';
 
 export default function ExplorePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStyles, setSelectedStyles] = useState([]);
     const [priceRange, setPriceRange] = useState('all');
+    const { data } = useAppData();
+    
+    const photographers = data.photographers || [];
+    const styles = data.styles || [];
     const [sortBy, setSortBy] = useState('rating');
     const [showFilters, setShowFilters] = useState(false);
     const [instantOnly, setInstantOnly] = useState(false);
@@ -143,7 +148,7 @@ export default function ExplorePage() {
                                 {filtered.map((p, i) => (
                                     <Link to={`/photographer/${p.id}`} key={p.id} className="photographer-card" id={`explore-card-${p.id}`}>
                                         <div className="photographer-card-img">
-                                            <img src={p.portfolio[0]} alt={p.name} />
+                                            <img src={p.portfolio?.[0] || p.avatar || ''} alt={p.name} />
                                             <div className="photographer-card-overlay">
                                                 <span className="btn btn-sm btn-primary">Xem hồ sơ</span>
                                             </div>
