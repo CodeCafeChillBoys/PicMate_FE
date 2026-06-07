@@ -38,7 +38,7 @@ export const apiClient = {
     });
     
     if (!res.ok) {
-        let errorMsg = 'Lỗi hệ thống khi tải ảnh lên.';
+        let errorMsg = `Lỗi hệ thống khi tải ảnh lên. (HTTP ${res.status})`;
         try {
             const errData = await res.json();
             errorMsg = errData.Error || errData.title || errData.message || errorMsg;
