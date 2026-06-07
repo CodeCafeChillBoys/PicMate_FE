@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7123';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://picmate-api-latest.onrender.com';
 
 const http = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
-let isRefreshing = false;
+let isRefreshing = false; 
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
