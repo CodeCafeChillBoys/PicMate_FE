@@ -16,6 +16,7 @@ import AdminDashboard from './pages/dashboard/AdminDashboard';
 import InstantPage from './pages/InstantPage';
 import PaymentResultPage from './pages/PaymentResultPage';
 import DirectAccessRoute from './components/auth/DirectAccessRoute';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <AuthProvider>
           <ErrorBoundary>
             <div className="app">
+              <Toaster position="top-right" />
               <Navbar />
               <main className="main-content">
                 <Routes>
