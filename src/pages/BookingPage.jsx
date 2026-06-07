@@ -8,6 +8,7 @@ import { useAppData } from '../context/AppDataContext';
 import { formatPrice } from '../data/data';
 import { apiClient } from '../services/apiClient';
 import { API_BASE_URL } from '../services/http';
+import toast from 'react-hot-toast';
 import './BookingPage.css';
 
 export default function BookingPage() {
@@ -94,13 +95,13 @@ export default function BookingPage() {
             if (response.paymentUrl) {
                 window.location.href = response.paymentUrl;
             } else {
-                alert('Đặt lịch thành công!');
+                toast.success('Đặt lịch thành công!');
                 window.location.href = '/customer/dashboard';
             }
         } catch (err) {
             console.error(err);
             const errorTitle = err.response?.data?.title || err.response?.data?.detail || err.response?.data?.message || err.message;
-            alert('Lỗi: ' + errorTitle);
+            toast.error('Lỗi: ' + errorTitle);
         } finally {
             setIsSubmitting(false);
         }

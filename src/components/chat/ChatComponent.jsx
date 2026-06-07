@@ -3,6 +3,7 @@ import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../services/http';
 import { Send, X, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 import './ChatComponent.css';
 
 export default function ChatComponent({ otherUser, onClose }) {
@@ -91,12 +92,12 @@ export default function ChatComponent({ otherUser, onClose }) {
         e.preventDefault();
         
         if (!user) {
-            alert("Vui lòng đăng nhập để gửi tin nhắn!");
+            toast.error("Vui lòng đăng nhập để gửi tin nhắn!");
             return;
         }
         
         if (!connection || connection.state !== 'Connected') {
-            alert("Đang kết nối đến máy chủ trò chuyện, vui lòng đợi...");
+            toast.error("Đang kết nối đến máy chủ trò chuyện, vui lòng đợi...");
             return;
         }
 
@@ -107,7 +108,7 @@ export default function ChatComponent({ otherUser, onClose }) {
             setNewMessage('');
         } catch (e) {
             console.error("Gửi tin nhắn thất bại: ", e);
-            alert("Lỗi gửi tin: " + e.message);
+            toast.error("Lỗi gửi tin: " + e.message);
         }
     };
 

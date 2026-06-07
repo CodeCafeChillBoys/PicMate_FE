@@ -10,6 +10,7 @@ import { apiClient, formatPrice } from '../../services/apiClient';
 import { API_BASE_URL } from '../../services/http';
 import http from '../../services/http';
 import ChatComponent from '../../components/chat/ChatComponent';
+import toast from 'react-hot-toast';
 import './PhotographerDashboard.css';
 
 export default function PhotographerDashboard() {
@@ -184,8 +185,9 @@ export default function PhotographerDashboard() {
             });
             if (res.ok) setServices(await res.json());
             setShowServiceModal(false);
+            toast.success('Lưu dịch vụ thành công!');
         } catch (err) {
-            alert('Lỗi khi lưu dịch vụ: ' + (err.response?.data?.title || err.message));
+            toast.error('Lỗi khi lưu dịch vụ: ' + (err.response?.data?.title || err.message));
         }
     };
 
@@ -214,8 +216,9 @@ export default function PhotographerDashboard() {
             };
             await http.put('/api/graphers/me', payload);
             setPortfolio(updatedPortfolio);
+            toast.success('Tải ảnh lên thành công!');
         } catch (err) {
-            alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.response?.data?.title || err.message));
+            toast.error('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.response?.data?.title || err.message));
         } finally {
             setIsUploading(false);
             e.target.value = null; // reset input
@@ -238,8 +241,9 @@ export default function PhotographerDashboard() {
             setIsProfileUpdating(true);
             const url = await apiClient.uploadImage(file);
             setProfileForm({ ...profileForm, avatarUrl: url });
+            toast.success('Tải ảnh đại diện thành công!');
         } catch (err) {
-            alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
+            toast.error('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
         } finally {
             setIsProfileUpdating(false);
             e.target.value = null;
@@ -257,10 +261,10 @@ export default function PhotographerDashboard() {
                 name: response.fullName,
                 avatar: response.avatarUrl
             });
-            alert('Cập nhật hồ sơ thành công!');
+            toast.success('Cập nhật hồ sơ thành công!');
             setShowProfileModal(false);
         } catch (err) {
-            alert('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
+            toast.error('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
         } finally {
             setIsProfileUpdating(false);
         }
@@ -286,8 +290,9 @@ export default function PhotographerDashboard() {
             await http.put('/api/graphers/me', payload);
             setPortfolio(updatedPortfolio);
             setNewPortfolioUrl('');
+            toast.success('Thêm ảnh portfolio thành công!');
         } catch (err) {
-            alert('Lỗi khi thêm ảnh portfolio: ' + (err.response?.data?.title || err.message));
+            toast.error('Lỗi khi thêm ảnh portfolio: ' + (err.response?.data?.title || err.message));
         }
     };
 
@@ -310,8 +315,9 @@ export default function PhotographerDashboard() {
             };
             await http.put('/api/graphers/me', payload);
             setPortfolio(updatedPortfolio);
+            toast.success('Xóa ảnh portfolio thành công!');
         } catch (err) {
-            alert('Lỗi khi xóa ảnh portfolio: ' + (err.response?.data?.title || err.message));
+            toast.error('Lỗi khi xóa ảnh portfolio: ' + (err.response?.data?.title || err.message));
         }
     };
 
@@ -334,8 +340,9 @@ export default function PhotographerDashboard() {
             };
             await http.put('/api/graphers/me', payload);
             setServices(updatedList);
+            toast.success('Xóa dịch vụ thành công!');
         } catch (err) {
-            alert('Lỗi khi xóa dịch vụ');
+            toast.error('Lỗi khi xóa dịch vụ');
         }
     };
 
@@ -386,39 +393,39 @@ export default function PhotographerDashboard() {
             setSelectedOrder(detail);
             setShowOrderDetail(true);
         } catch (err) {
-            alert("Lỗi khi tải chi tiết đơn hàng");
+            toast.error("Lỗi khi tải chi tiết đơn hàng");
         }
     };
 
     const handleCancelBooking = async () => {
         try {
             await apiClient.cancelBooking(selectedOrder.id, cancelReason);
-            alert("Từ chối / Hủy đơn hàng thành công");
+            toast.success("Từ chối / Hủy đơn hàng thành công");
             setShowCancelModal(false);
             setCancelReason('');
             setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled' } : o));
         } catch (err) {
-            alert("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+            toast.error("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
         }
     };
 
     const handleConfirmBooking = async (id) => {
         try {
             await apiClient.confirmBooking(id);
-            alert("Xác nhận đơn hàng thành công");
+            toast.success("Xác nhận đơn hàng thành công");
             setOrders(orders.map(o => o.id === id ? { ...o, status: 'confirmed' } : o));
         } catch (err) {
-            alert("Lỗi khi xác nhận đơn hàng: " + (err.response?.data?.Error || "Vui lòng thử lại."));
+            toast.error("Lỗi khi xác nhận đơn hàng: " + (err.response?.data?.Error || "Vui lòng thử lại."));
         }
     };
 
     const handleCompleteBooking = async (id) => {
         try {
             await apiClient.completeBooking(id);
-            alert("Hoàn thành đơn hàng thành công");
+            toast.success("Hoàn thành đơn hàng thành công");
             setOrders(orders.map(o => o.id === id ? { ...o, status: 'completed' } : o));
         } catch (err) {
-            alert("Lỗi khi hoàn thành đơn hàng: " + (err.response?.data?.Error || "Vui lòng thử lại."));
+            toast.error("Lỗi khi hoàn thành đơn hàng: " + (err.response?.data?.Error || "Vui lòng thử lại."));
         }
     };
 

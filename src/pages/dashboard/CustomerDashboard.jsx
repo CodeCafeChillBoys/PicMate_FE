@@ -12,6 +12,7 @@ import { API_BASE_URL } from '../../services/http';
 import { apiClient } from '../../services/apiClient';
 import { formatPrice } from '../../data/data';
 import ChatComponent from '../../components/chat/ChatComponent';
+import toast from 'react-hot-toast';
 import './CustomerDashboard.css';
 
 export default function CustomerDashboard() {
@@ -157,20 +158,20 @@ export default function CustomerDashboard() {
             setSelectedOrder(detail);
             setShowOrderDetail(true);
         } catch (err) {
-            alert("Lỗi khi tải chi tiết đơn hàng");
+            toast.error("Lỗi khi tải chi tiết đơn hàng");
         }
     };
 
     const handleCancelBooking = async () => {
         try {
             await apiClient.cancelBooking(selectedOrder.id, cancelReason);
-            alert("Hủy đơn hàng thành công");
+            toast.success("Hủy đơn hàng thành công");
             setShowCancelModal(false);
             setCancelReason('');
             // Update local state to reflect change without re-fetching everything
             setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled', rawStatus: 'Cancelled' } : o));
         } catch (err) {
-            alert("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+            toast.error("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
         }
     };
 
@@ -190,8 +191,9 @@ export default function CustomerDashboard() {
             setIsProfileUpdating(true);
             const url = await apiClient.uploadImage(file);
             setProfileForm({ ...profileForm, avatarUrl: url });
+            toast.success('Tải ảnh đại diện thành công!');
         } catch (err) {
-            alert('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
+            toast.error('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.message));
         } finally {
             setIsProfileUpdating(false);
             e.target.value = null;
@@ -209,10 +211,10 @@ export default function CustomerDashboard() {
                 name: response.fullName,
                 avatar: response.avatarUrl
             });
-            alert('Cập nhật hồ sơ thành công!');
+            toast.success('Cập nhật hồ sơ thành công!');
             setShowProfileModal(false);
         } catch (err) {
-            alert('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
+            toast.error('Lỗi khi cập nhật hồ sơ: ' + (err.response?.data?.Error || err.message));
         } finally {
             setIsProfileUpdating(false);
         }
@@ -221,10 +223,10 @@ export default function CustomerDashboard() {
     const handleStartBooking = async (orderId) => {
         try {
             await apiClient.startBooking(orderId);
-            alert("Xác nhận bắt đầu chụp thành công!");
+            toast.success("Xác nhận bắt đầu chụp thành công!");
             setOrders(orders.map(o => o.id === orderId ? { ...o, rawStatus: 'InProgress' } : o));
         } catch (err) {
-            alert("Lỗi khi bắt đầu đơn hàng. Vui lòng thử lại.");
+            toast.error("Lỗi khi bắt đầu đơn hàng. Vui lòng thử lại.");
         }
     };
 

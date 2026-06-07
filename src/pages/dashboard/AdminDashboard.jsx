@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { adminService } from '../../services/adminService';
 import { formatPrice } from '../../data/data';
+import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -133,8 +134,9 @@ export default function AdminDashboard() {
         try {
             const updated = await adminService.toggleUserStatus(userId);
             setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+            toast.success('Cập nhật trạng thái người dùng thành công!');
         } catch (err) {
-            alert('Không thể cập nhật trạng thái: ' + (err.message || 'Lỗi không xác định'));
+            toast.error('Không thể cập nhật trạng thái: ' + (err.message || 'Lỗi không xác định'));
         }
     }, []);
 
@@ -144,8 +146,9 @@ export default function AdminDashboard() {
             setPendingGraphers(prev => prev.filter(p => p.id !== grapherProfileId));
             // Reload revenue để cập nhật pendingKycCount
             adminService.getRevenue().then(setRevenue).catch(console.error);
+            toast.success(approved ? 'Đã duyệt KYC thành công!' : 'Đã từ chối KYC.');
         } catch (err) {
-            alert('Không thể xử lý KYC: ' + (err.message || 'Lỗi không xác định'));
+            toast.error('Không thể xử lý KYC: ' + (err.message || 'Lỗi không xác định'));
         }
     }, []);
 
