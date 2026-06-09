@@ -45,6 +45,23 @@ export const adminService = {
     http.get('/api/admin/graphers/pending').then((res) => res.data),
 
   /**
+   * Lấy danh sách graphers đã được duyệt (admin view, bao gồm trạng thái khóa).
+   * @returns {Promise<AdminActiveGrapherResponse[]>}
+   */
+  getActiveGraphers: () =>
+    http.get('/api/admin/graphers/active').then((res) => res.data),
+
+  /**
+   * Khóa hoặc mở khóa tài khoản của một grapher.
+   * @param {string} grapherProfileId - GUID của grapher profile
+   * @returns {Promise<AdminActiveGrapherResponse>}
+   */
+  toggleGrapherStatus: (grapherProfileId) =>
+    http
+      .put(`/api/admin/graphers/${grapherProfileId}/toggle-status`)
+      .then((res) => res.data),
+
+  /**
    * Duyệt hoặc từ chối KYC của một grapher.
    * @param {string} grapherProfileId - GUID của grapher profile
    * @param {boolean} approved - true = duyệt, false = từ chối
@@ -54,13 +71,6 @@ export const adminService = {
     http
       .post(`/api/admin/graphers/${grapherProfileId}/kyc?approved=${approved}`)
       .then((res) => res.data),
-
-  /**
-   * Lấy tất cả graphers đang hoạt động (đã verified) từ API.
-   * @returns {Promise<GrapherSummaryResponse[]>}
-   */
-  getActiveGraphers: () =>
-    http.get('/api/graphers').then((res) => res.data),
 
   // ── Bookings ───────────────────────────────────────────────────────────────
   /**
@@ -81,4 +91,63 @@ export const adminService = {
    */
   getRecentActivities: () =>
     http.get('/api/admin/activities').then((res) => res.data),
+
+  // ── Disputes ───────────────────────────────────────────────────────────────
+  /**
+   * Lấy danh sách tranh chấp.
+   * @param {string} [status] - 'Pending' | 'Resolved' | 'Closed' | 'all'
+   * @returns {Promise<AdminDisputeResponse[]>}
+   */
+  getDisputes: (status = 'all') => {
+    const params = {};
+    if (status && status !== 'all') params.status = status;
+    return http.get('/api/admin/disputes', { params }).then((res) => res.data);
+  },
+
+  /**
+   * Giải quyết một tranh chấp.
+   * @param {string} disputeId - GUID của dispute
+   * @param {string} action - 'refund' | 'warning' | 'resolved'
+   * @param {string} [adminNote] - ghi chú của admin
+   * @returns {Promise<AdminDisputeResponse>}
+   */
+  resolveDispute: (disputeId, action, adminNote = '') =>
+    http
+      .post(`/api/admin/disputes/${disputeId}/resolve`, { action, adminNote })
+      .then((res) => res.data),
+
+  // ── System Settings ────────────────────────────────────────────────────────
+  /**
+   * Lấy cài đặt hệ thống hiện tại.
+   * @returns {Promise<SystemSettingsResponse>}
+   */
+  getSystemSettings: () =>
+    http.get('/api/admin/settings').then((res) => res.data),
+
+  /**
+   * Cập nhật cài đặt hệ thống.
+   * @param {object} data - SystemSettings object
+   * @returns {Promise<SystemSettingsResponse>}
+   */
+  updateSystemSettings: (data) =>
+    http.put('/api/admin/settings', data).then((res) => res.data),
+
+  // ── Detail Views ─────────────────────────────────────────────────────────
+  /**
+   * Xem chi tiết User
+   */
+  getUserDetail: (userId) =>
+    http.get(`/api/admin/users/${userId}`).then((res) => res.data),
+
+  /**
+   * Xem chi tiết Grapher
+   */
+  getGrapherDetail: (grapherProfileId) =>
+    http.get(`/api/admin/graphers/${grapherProfileId}`).then((res) => res.data),
+
+  /**
+   * Xem chi tiết Booking
+   */
+  getBookingDetail: (bookingId) =>
+    http.get(`/api/admin/bookings/${bookingId}`).then((res) => res.data),
 };

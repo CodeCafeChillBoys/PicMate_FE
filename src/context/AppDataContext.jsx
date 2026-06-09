@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '../services/apiClient';
 
 const AppDataContext = createContext(null);
@@ -13,9 +13,6 @@ const defaultData = {
   demoAccounts: [],
   testimonials: [],
   membershipPlans: [],
-  mockUsers: [],
-  mockDisputes: [],
-  mockActivities: [],
   mockMessages: [],
   favoritePhotographerIds: [],
 };
