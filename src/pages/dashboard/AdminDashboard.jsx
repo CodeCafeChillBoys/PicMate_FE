@@ -51,8 +51,10 @@ export default function AdminDashboard() {
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
     const [orderFilter, setOrderFilter] = useState('all');
+    const [disputeFilter, setDisputeFilter] = useState('all');
     const { logout } = useAuth();
-    const { data: appData } = useAppData();                       // mock data cho disputes/settings
+    const { data } = useAppData();
+    const bookingStatuses = data?.bookingStatuses || [];
 
     // ── API state ──────────────────────────────────────────────────────────
     const [revenue, setRevenue] = useState(null);
@@ -73,9 +75,23 @@ export default function AdminDashboard() {
     const [bookings, setBookings] = useState([]);
     const [bookingsLoading, setBookingsLoading] = useState(false);
 
-    // ── mock data cho disputes / settings (chưa có API) ───────────────────
-    const mockDisputes = appData.mockDisputes || [];
-    const bookingStatuses = appData.bookingStatuses || [];
+    const [disputes, setDisputes] = useState([]);
+    const [disputesLoading, setDisputesLoading] = useState(false);
+
+    const [settings, setSettings] = useState(null);
+    const [settingsLoading, setSettingsLoading] = useState(false);
+    const [settingsSaving, setSettingsSaving] = useState(false);
+    // Local form state cho settings
+    const [settingsForm, setSettingsForm] = useState({
+        platformFeePercent: 15,
+        minWithdrawalAmount: 200000,
+        momoEnabled: true,
+        vnPayEnabled: true,
+        zaloPayEnabled: false,
+        emailNotifyNewBooking: true,
+        emailNotifyDispute: true,
+        maintenanceMode: false,
+    });
 
     // ─── Fetch overview data on mount ──────────────────────────────────────
     useEffect(() => {
@@ -111,7 +127,7 @@ export default function AdminDashboard() {
                 .catch(console.error)
                 .finally(() => setPendingLoading(false));
 
-            // Lấy graphers đang hoạt động từ API thay vì bootstrap mock
+            // Gọi admin endpoint riêng (có thêm isActive, kycStatus, totalBookings)
             adminService.getActiveGraphers()
                 .then(setActiveGraphers)
                 .catch(console.error)
@@ -129,12 +145,102 @@ export default function AdminDashboard() {
         }
     }, [activeTab, orderFilter]);
 
+    useEffect(() => {
+        if (activeTab === 'disputes') {
+            setDisputesLoading(true);
+            adminService.getDisputes(disputeFilter === 'all' ? '' : disputeFilter)
+                .then(setDisputes)
+                .catch(console.error)
+                .finally(() => setDisputesLoading(false));
+        }
+    }, [activeTab, disputeFilter]);
+
+    useEffect(() => {
+        if (activeTab === 'settings') {
+            setSettingsLoading(true);
+            adminService.getSystemSettings()
+                .then(s => {
+                    setSettings(s);
+                    setSettingsForm({
+                        platformFeePercent: s.platformFeePercent,
+                        minWithdrawalAmount: s.minWithdrawalAmount,
+                        momoEnabled: s.momoEnabled,
+                        vnPayEnabled: s.vnPayEnabled,
+                        zaloPayEnabled: s.zaloPayEnabled,
+                        emailNotifyNewBooking: s.emailNotifyNewBooking,
+                        emailNotifyDispute: s.emailNotifyDispute,
+                        maintenanceMode: s.maintenanceMode,
+                    });
+                })
+                .catch(console.error)
+                .finally(() => setSettingsLoading(false));
+        }
+    }, [activeTab]);
+
+    // ─── Modal States ────────────────────────────────────────────────────────
+    const [viewUserModal, setViewUserModal] = useState(null);
+    const [viewGrapherModal, setViewGrapherModal] = useState(null);
+    const [viewBookingModal, setViewBookingModal] = useState(null);
+    const [modalLoading, setModalLoading] = useState(false);
+
     // ─── Actions ───────────────────────────────────────────────────────────
+    const handleViewUser = async (userId) => {
+        setModalLoading(true);
+        setViewUserModal({ id: userId }); // Open modal in loading state
+        try {
+            const data = await adminService.getUserDetail(userId);
+            setViewUserModal(data);
+        } catch (err) {
+            toast.error('Lỗi lấy thông tin người dùng: ' + (err.message || 'Lỗi không xác định'));
+            setViewUserModal(null);
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    const handleViewGrapher = async (grapherId) => {
+        setModalLoading(true);
+        setViewGrapherModal({ id: grapherId });
+        try {
+            const data = await adminService.getGrapherDetail(grapherId);
+            setViewGrapherModal(data);
+        } catch (err) {
+            toast.error('Lỗi lấy thông tin grapher: ' + (err.message || 'Lỗi không xác định'));
+            setViewGrapherModal(null);
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    const handleViewBooking = async (bookingId) => {
+        setModalLoading(true);
+        setViewBookingModal({ id: bookingId });
+        try {
+            const data = await adminService.getBookingDetail(bookingId);
+            setViewBookingModal(data);
+        } catch (err) {
+            toast.error('Lỗi lấy thông tin đơn hàng: ' + (err.message || 'Lỗi không xác định'));
+            setViewBookingModal(null);
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
     const handleToggleUser = useCallback(async (userId) => {
         try {
             const updated = await adminService.toggleUserStatus(userId);
             setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
             toast.success('Cập nhật trạng thái người dùng thành công!');
+        } catch (err) {
+            toast.error('Không thể cập nhật trạng thái: ' + (err.message || 'Lỗi không xác định'));
+        }
+    }, []);
+
+    const handleToggleGrapher = useCallback(async (grapherProfileId) => {
+        try {
+            const updated = await adminService.toggleGrapherStatus(grapherProfileId);
+            setActiveGraphers(prev => prev.map(g => g.id === updated.id ? updated : g));
+            toast.success(updated.isActive ? 'Đã mở khóa tài khoản grapher!' : 'Đã khóa tài khoản grapher!');
         } catch (err) {
             toast.error('Không thể cập nhật trạng thái: ' + (err.message || 'Lỗi không xác định'));
         }
@@ -146,11 +252,39 @@ export default function AdminDashboard() {
             setPendingGraphers(prev => prev.filter(p => p.id !== grapherProfileId));
             // Reload revenue để cập nhật pendingKycCount
             adminService.getRevenue().then(setRevenue).catch(console.error);
+            // Reload active graphers nếu duyệt thành công để hiển thị ngay trong danh sách
+            if (approved) {
+                adminService.getActiveGraphers().then(setActiveGraphers).catch(console.error);
+            }
             toast.success(approved ? 'Đã duyệt KYC thành công!' : 'Đã từ chối KYC.');
         } catch (err) {
             toast.error('Không thể xử lý KYC: ' + (err.message || 'Lỗi không xác định'));
         }
     }, []);
+
+    const handleResolveDispute = useCallback(async (disputeId, action) => {
+        try {
+            const updated = await adminService.resolveDispute(disputeId, action);
+            setDisputes(prev => prev.map(d => d.id === updated.id ? updated : d));
+            const actionLabels = { refund: 'Đã hoàn tiền thành công!', warning: 'Đã gửi cảnh báo!', resolved: 'Đã giải quyết tranh chấp!' };
+            toast.success(actionLabels[action] || 'Xử lý thành công!');
+        } catch (err) {
+            toast.error('Không thể xử lý tranh chấp: ' + (err.message || 'Lỗi không xác định'));
+        }
+    }, []);
+
+    const handleSaveSettings = useCallback(async () => {
+        setSettingsSaving(true);
+        try {
+            const updated = await adminService.updateSystemSettings(settingsForm);
+            setSettings(updated);
+            toast.success('Lưu cài đặt hệ thống thành công!');
+        } catch (err) {
+            toast.error('Không thể lưu cài đặt: ' + (err.message || 'Lỗi không xác định'));
+        } finally {
+            setSettingsSaving(false);
+        }
+    }, [settingsForm]);
 
     // ─── Derived stats from API ────────────────────────────────────────────
     const adminStats = [
@@ -184,6 +318,8 @@ export default function AdminDashboard() {
     const monthlyData = revenue?.monthlyRevenue ?? [];
     const maxRevenue = Math.max(...monthlyData.map(m => Number(m.grossRevenue)), 1);
 
+    const pendingDisputesCount = disputes.filter(d => d.status === 'Pending').length;
+
     const getStatusBadge = (status) => {
         const map = {
             PendingPayment: { label: 'Chờ thanh toán', color: 'warning' },
@@ -213,6 +349,7 @@ export default function AdminDashboard() {
     };
 
     return (
+        <>
         <div className="dashboard-page admin-dashboard">
             <div className="container">
                 <div className="dashboard-layout">
@@ -235,7 +372,7 @@ export default function AdminDashboard() {
                                     badge: revenue?.pendingKycCount || pendingGraphers.length || null
                                 },
                                 { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng' },
-                                { key: 'disputes', icon: <AlertTriangle size={18} />, label: 'Tranh chấp', badge: mockDisputes.filter(d => d.status === 'pending').length || null },
+                                { key: 'disputes', icon: <AlertTriangle size={18} />, label: 'Tranh chấp', badge: pendingDisputesCount || null },
                                 { key: 'settings', icon: <Settings size={18} />, label: 'Cài đặt hệ thống' },
                             ].map(item => (
                                 <button
@@ -393,7 +530,7 @@ export default function AdminDashboard() {
                                                     <AlertTriangle size={20} />
                                                 </div>
                                                 <span>Xử lý tranh chấp</span>
-                                                <span className="qa-count">{mockDisputes.filter(d => d.status === 'pending').length}</span>
+                                                <span className="qa-count">{pendingDisputesCount}</span>
                                             </button>
                                             <button className="quick-action-btn" onClick={() => setActiveTab('users')}>
                                                 <div className="qa-icon" style={{ background: 'rgba(108, 92, 231, 0.1)', color: 'var(--primary)' }}>
@@ -495,7 +632,7 @@ export default function AdminDashboard() {
                                                     </td>
                                                     <td>
                                                         <div className="table-actions">
-                                                            <button className="table-action-btn" title="Xem chi tiết" id={`view-user-${u.id}`}>
+                                                            <button className="table-action-btn" title="Xem chi tiết" id={`view-user-${u.id}`} onClick={() => handleViewUser(u.id)}>
                                                                 <Eye size={15} />
                                                             </button>
                                                             <button
@@ -625,9 +762,14 @@ export default function AdminDashboard() {
                                                         </td>
                                                         <td className="td-num">{p.reviewCount}</td>
                                                         <td>
-                                                            <span className={`badge ${p.isOnline ? 'badge-success' : 'badge-warning'}`}>
-                                                                {p.isOnline ? '🟢 Online' : '⚫ Offline'}
-                                                            </span>
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                <span className={`badge ${p.isOnline ? 'badge-success' : 'badge-warning'}`}>
+                                                                    {p.isOnline ? '🟢 Online' : '⚫ Offline'}
+                                                                </span>
+                                                                <span className={`badge ${p.isActive ? 'badge-success' : 'badge-danger'}`}>
+                                                                    {p.isActive ? 'Hoạt động' : '🔒 Bị khóa'}
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td>
                                                             {p.isVerified
@@ -637,11 +779,15 @@ export default function AdminDashboard() {
                                                         </td>
                                                         <td>
                                                             <div className="table-actions">
-                                                                <button className="table-action-btn" title="Xem chi tiết">
+                                                                <button className="table-action-btn" title="Xem chi tiết" onClick={() => handleViewGrapher(p.id)}>
                                                                     <Eye size={15} />
                                                                 </button>
-                                                                <button className="table-action-btn action-danger" title="Tạm khóa">
-                                                                    <Ban size={15} />
+                                                                <button
+                                                                    className={`table-action-btn ${p.isActive ? 'action-danger' : 'action-success'}`}
+                                                                    title={p.isActive ? 'Tạm khóa' : 'Mở khóa'}
+                                                                    onClick={() => handleToggleGrapher(p.id)}
+                                                                >
+                                                                    {p.isActive ? <Ban size={15} /> : <CheckCircle size={15} />}
                                                                 </button>
                                                             </div>
                                                         </td>
@@ -728,7 +874,7 @@ export default function AdminDashboard() {
                                                     <td>{getStatusBadge(b.status)}</td>
                                                     <td>
                                                         <div className="table-actions">
-                                                            <button className="table-action-btn" title="Xem chi tiết">
+                                                            <button className="table-action-btn" title="Xem chi tiết" onClick={() => handleViewBooking(b.id)}>
                                                                 <Eye size={15} />
                                                             </button>
                                                             <button className="table-action-btn" title="Thêm">
@@ -751,66 +897,100 @@ export default function AdminDashboard() {
                                     <h2>Xử lý tranh chấp</h2>
                                     <div className="dispute-stats">
                                         <span className="summary-badge urgent">
-                                            <AlertTriangle size={14} /> Đang chờ: <strong>{mockDisputes.filter(d => d.status === 'pending').length}</strong>
+                                            <AlertTriangle size={14} /> Đang chờ: <strong>{pendingDisputesCount}</strong>
                                         </span>
                                     </div>
                                 </div>
 
-                                {mockDisputes.length === 0 ? (
+                                <div className="admin-filter-row">
+                                    {[
+                                        { key: 'all', label: 'Tất cả' },
+                                        { key: 'Pending', label: 'Chờ xử lý' },
+                                        { key: 'Resolved', label: 'Đã giải quyết' },
+                                        { key: 'Closed', label: 'Đã đóng' },
+                                    ].map(f => (
+                                        <button
+                                            key={f.key}
+                                            className={`order-filter-tab ${disputeFilter === f.key ? 'active' : ''}`}
+                                            onClick={() => setDisputeFilter(f.key)}
+                                        >
+                                            {f.label}
+                                        </button>
+                                    ))}
+                                    <span className="filter-count">
+                                        {disputesLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : `${disputes.length} tranh chấp`}
+                                    </span>
+                                </div>
+
+                                {disputesLoading ? (
+                                    <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                        <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                                    </div>
+                                ) : disputes.length === 0 ? (
                                     <p style={{ color: 'var(--text-muted)', padding: '2rem' }}>
                                         ✅ Không có tranh chấp nào cần xử lý
                                     </p>
                                 ) : (
                                     <div className="disputes-list">
-                                        {mockDisputes.map(d => (
-                                            <div key={d.id} className={`dispute-card priority-${d.priority}`} id={`dispute-${d.id}`}>
+                                        {disputes.map(d => (
+                                            <div key={d.id} className={`dispute-card priority-${d.priority?.toLowerCase()}`} id={`dispute-${d.id}`}>
                                                 <div className="dispute-header">
                                                     <div className="dispute-id-row">
-                                                        <code className="order-code">{d.id}</code>
-                                                        {getPriorityBadge(d.priority)}
-                                                        {d.status === 'resolved'
+                                                        <code className="order-code">{d.id?.substring(0, 8)}...</code>
+                                                        {getPriorityBadge(d.priority?.toLowerCase())}
+                                                        {d.status === 'Resolved' || d.status === 'Closed'
                                                             ? <span className="badge badge-success">✅ Đã xử lý</span>
                                                             : <span className="badge badge-warning">⏳ Đang chờ</span>
                                                         }
                                                     </div>
-                                                    <span className="dispute-date"><Calendar size={13} /> {d.date}</span>
+                                                    <span className="dispute-date"><Calendar size={13} /> {d.createdAt}</span>
                                                 </div>
 
                                                 <div className="dispute-parties">
                                                     <div className="dispute-party">
-                                                        <img src={d.reporterAvatar} alt={d.reporter} className="avatar" />
+                                                        {d.reporterAvatar
+                                                            ? <img src={d.reporterAvatar} alt={d.reporterName} className="avatar" />
+                                                            : <div className="user-cell-avatar">{(d.reporterName || '?').charAt(0)}</div>
+                                                        }
                                                         <div>
                                                             <span className="party-role">Người báo cáo</span>
-                                                            <strong>{d.reporter}</strong>
+                                                            <strong>{d.reporterName}</strong>
                                                         </div>
                                                     </div>
                                                     <span className="dispute-vs">VS</span>
                                                     <div className="dispute-party">
-                                                        <img src={d.againstAvatar} alt={d.against} className="avatar" />
+                                                        {d.respondentAvatar
+                                                            ? <img src={d.respondentAvatar} alt={d.respondentName} className="avatar" />
+                                                            : <div className="user-cell-avatar">{(d.respondentName || '?').charAt(0)}</div>
+                                                        }
                                                         <div>
                                                             <span className="party-role">Bị báo cáo</span>
-                                                            <strong>{d.against}</strong>
+                                                            <strong>{d.respondentName}</strong>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <div className="dispute-reason">
                                                     <p>📝 {d.reason}</p>
+                                                    {d.adminNote && <p style={{ color: 'var(--text-muted)', fontSize: '0.85em' }}>💬 Admin: {d.adminNote}</p>}
                                                 </div>
 
                                                 <div className="dispute-footer">
                                                     <div className="dispute-amount">
-                                                        <DollarSign size={14} /> Giá trị đơn: <strong>{formatPrice(d.amount)}</strong>
+                                                        <DollarSign size={14} /> Giá trị đơn: <strong>{formatPrice(d.bookingAmount)}</strong>
                                                     </div>
-                                                    {d.status === 'pending' && (
+                                                    {d.status === 'Pending' && (
                                                         <div className="dispute-actions">
-                                                            <button className="btn btn-ghost btn-sm" id={`dispute-refund-${d.id}`}>
+                                                            <button className="btn btn-ghost btn-sm" id={`dispute-refund-${d.id}`}
+                                                                onClick={() => handleResolveDispute(d.id, 'refund')}>
                                                                 <RefreshCw size={14} /> Hoàn tiền
                                                             </button>
-                                                            <button className="btn btn-ghost btn-sm" id={`dispute-warn-${d.id}`}>
+                                                            <button className="btn btn-ghost btn-sm" id={`dispute-warn-${d.id}`}
+                                                                onClick={() => handleResolveDispute(d.id, 'warning')}>
                                                                 <AlertTriangle size={14} /> Cảnh báo
                                                             </button>
-                                                            <button className="btn btn-primary btn-sm" id={`dispute-resolve-${d.id}`}>
+                                                            <button className="btn btn-primary btn-sm" id={`dispute-resolve-${d.id}`}
+                                                                onClick={() => handleResolveDispute(d.id, 'resolved')}>
                                                                 <CheckCircle size={14} /> Giải quyết
                                                             </button>
                                                         </div>
@@ -828,6 +1008,7 @@ export default function AdminDashboard() {
                             <>
                                 <div className="dashboard-content-header">
                                     <h2>Cài đặt hệ thống</h2>
+                                    {settingsLoading && <Loader2 size={18} style={{ animation: 'spin 1s linear infinite', color: 'var(--text-muted)' }} />}
                                 </div>
 
                                 <div className="settings-section">
@@ -839,7 +1020,14 @@ export default function AdminDashboard() {
                                                 <span>Phí commission thu từ Phone-Grapher</span>
                                             </div>
                                             <div className="setting-input-group">
-                                                <input type="number" className="input setting-number-input" defaultValue="15" id="platform-fee" />
+                                                <input
+                                                    type="number"
+                                                    className="input setting-number-input"
+                                                    value={settingsForm.platformFeePercent}
+                                                    onChange={e => setSettingsForm(f => ({ ...f, platformFeePercent: Number(e.target.value) }))}
+                                                    id="platform-fee"
+                                                    min={0} max={100}
+                                                />
                                                 <span className="input-suffix">%</span>
                                             </div>
                                         </div>
@@ -849,7 +1037,14 @@ export default function AdminDashboard() {
                                                 <span>Số tiền tối thiểu để Phone-Grapher rút</span>
                                             </div>
                                             <div className="setting-input-group">
-                                                <input type="number" className="input setting-number-input" defaultValue="200000" id="min-withdrawal" />
+                                                <input
+                                                    type="number"
+                                                    className="input setting-number-input"
+                                                    value={settingsForm.minWithdrawalAmount}
+                                                    onChange={e => setSettingsForm(f => ({ ...f, minWithdrawalAmount: Number(e.target.value) }))}
+                                                    id="min-withdrawal"
+                                                    min={0}
+                                                />
                                                 <span className="input-suffix">đ</span>
                                             </div>
                                         </div>
@@ -859,57 +1054,51 @@ export default function AdminDashboard() {
                                 <div className="settings-section">
                                     <h3><CreditCard size={18} /> Thanh toán</h3>
                                     <div className="settings-group">
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>MoMo Payment</strong>
-                                                <span>Thanh toán qua ví MoMo</span>
+                                        {[
+                                            { key: 'momoEnabled', label: 'MoMo Payment', desc: 'Thanh toán qua ví MoMo' },
+                                            { key: 'vnPayEnabled', label: 'VNPay', desc: 'Thanh toán qua VNPay (ATM, Visa, QR)' },
+                                            { key: 'zaloPayEnabled', label: 'ZaloPay', desc: 'Thanh toán qua ZaloPay' },
+                                        ].map(({ key, label, desc }) => (
+                                            <div key={key} className="setting-item">
+                                                <div className="setting-info">
+                                                    <strong>{label}</strong>
+                                                    <span>{desc}</span>
+                                                </div>
+                                                <button
+                                                    className={`toggle-switch ${settingsForm[key] ? 'active' : ''}`}
+                                                    id={`toggle-${key}`}
+                                                    onClick={() => setSettingsForm(f => ({ ...f, [key]: !f[key] }))}
+                                                    type="button"
+                                                >
+                                                    <span className="toggle-knob" />
+                                                </button>
                                             </div>
-                                            <button className="toggle-switch active" id="toggle-momo">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>VNPay</strong>
-                                                <span>Thanh toán qua VNPay (ATM, Visa, QR)</span>
-                                            </div>
-                                            <button className="toggle-switch active" id="toggle-vnpay">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>ZaloPay</strong>
-                                                <span>Thanh toán qua ZaloPay</span>
-                                            </div>
-                                            <button className="toggle-switch" id="toggle-zalopay">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
 
                                 <div className="settings-section">
                                     <h3><Bell size={18} /> Thông báo hệ thống</h3>
                                     <div className="settings-group">
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>Email thông báo đơn mới</strong>
-                                                <span>Gửi email cho admin khi có đơn hàng mới</span>
+                                        {[
+                                            { key: 'emailNotifyNewBooking', label: 'Email thông báo đơn mới', desc: 'Gửi email cho admin khi có đơn hàng mới' },
+                                            { key: 'emailNotifyDispute', label: 'Cảnh báo tranh chấp', desc: 'Thông báo ngay khi có tranh chấp mới' },
+                                        ].map(({ key, label, desc }) => (
+                                            <div key={key} className="setting-item">
+                                                <div className="setting-info">
+                                                    <strong>{label}</strong>
+                                                    <span>{desc}</span>
+                                                </div>
+                                                <button
+                                                    className={`toggle-switch ${settingsForm[key] ? 'active' : ''}`}
+                                                    id={`toggle-${key}`}
+                                                    onClick={() => setSettingsForm(f => ({ ...f, [key]: !f[key] }))}
+                                                    type="button"
+                                                >
+                                                    <span className="toggle-knob" />
+                                                </button>
                                             </div>
-                                            <button className="toggle-switch active" id="toggle-email-notif">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>Cảnh báo tranh chấp</strong>
-                                                <span>Thông báo ngay khi có tranh chấp mới</span>
-                                            </div>
-                                            <button className="toggle-switch active" id="toggle-dispute-notif">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
 
@@ -921,7 +1110,12 @@ export default function AdminDashboard() {
                                                 <strong>Chế độ bảo trì</strong>
                                                 <span>Tạm ngừng hoạt động hệ thống để bảo trì</span>
                                             </div>
-                                            <button className="toggle-switch" id="toggle-maintenance">
+                                            <button
+                                                className={`toggle-switch ${settingsForm.maintenanceMode ? 'active' : ''}`}
+                                                id="toggle-maintenance"
+                                                onClick={() => setSettingsForm(f => ({ ...f, maintenanceMode: !f.maintenanceMode }))}
+                                                type="button"
+                                            >
                                                 <span className="toggle-knob" />
                                             </button>
                                         </div>
@@ -929,8 +1123,16 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="settings-save-row">
-                                    <button className="btn btn-primary" id="admin-save-settings">
-                                        <CheckCircle size={16} /> Lưu cài đặt
+                                    <button
+                                        className="btn btn-primary"
+                                        id="admin-save-settings"
+                                        onClick={handleSaveSettings}
+                                        disabled={settingsSaving}
+                                    >
+                                        {settingsSaving
+                                            ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang lưu...</>
+                                            : <><CheckCircle size={16} /> Lưu cài đặt</>
+                                        }
                                     </button>
                                 </div>
                             </>
@@ -939,5 +1141,264 @@ export default function AdminDashboard() {
                 </div>
             </div>
         </div>
+
+        {/* ─── Modals ───────────────────────────────────────────────────────── */}
+        {viewUserModal && (
+            <div className="admin-modal-overlay" onClick={() => setViewUserModal(null)}>
+                <div className="admin-modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-header">
+                        <h2>Chi tiết Người dùng</h2>
+                        <button className="admin-modal-close" onClick={() => setViewUserModal(null)}><XCircle size={20} /></button>
+                    </div>
+                    <div className="admin-modal-body">
+                        {modalLoading && !viewUserModal.email ? (
+                            <div className="admin-modal-loading"><Loader2 className="spin" size={24} /> Đang tải...</div>
+                        ) : (
+                            <div className="admin-detail-grid">
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">ID:</span>
+                                    <span className="admin-detail-value">{viewUserModal.id}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Họ tên:</span>
+                                    <span className="admin-detail-value">{viewUserModal.name}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Email:</span>
+                                    <span className="admin-detail-value">{viewUserModal.email}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Vai trò:</span>
+                                    <span className="admin-detail-value">{viewUserModal.role}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Ngày tham gia:</span>
+                                    <span className="admin-detail-value">{viewUserModal.joinDate}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Trạng thái:</span>
+                                    <span className="admin-detail-value">
+                                        <span className={`status-badge ${viewUserModal.isActive ? 'completed' : 'cancelled'}`}>
+                                            {viewUserModal.isActive ? 'Hoạt động' : 'Bị khóa'}
+                                        </span>
+                                    </span>
+                                </div>
+                                <div className="admin-detail-full">
+                                    <h3>Các đơn hàng gần đây ({viewUserModal.totalBookings} tổng)</h3>
+                                    {viewUserModal.recentBookings?.length > 0 ? (
+                                        <table className="admin-table mini-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Grapher</th>
+                                                    <th>Gói</th>
+                                                    <th>Ngày</th>
+                                                    <th>Giá</th>
+                                                    <th>Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {viewUserModal.recentBookings.map(b => (
+                                                    <tr key={b.id}>
+                                                        <td>{b.photographerName}</td>
+                                                        <td>{b.service}</td>
+                                                        <td>{b.date}</td>
+                                                        <td>{formatPrice(b.total)}</td>
+                                                        <td>{getStatusBadge(b.status)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p className="text-muted">Chưa có đơn hàng nào.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {viewGrapherModal && (
+            <div className="admin-modal-overlay" onClick={() => setViewGrapherModal(null)}>
+                <div className="admin-modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-header">
+                        <h2>Chi tiết Grapher</h2>
+                        <button className="admin-modal-close" onClick={() => setViewGrapherModal(null)}><XCircle size={20} /></button>
+                    </div>
+                    <div className="admin-modal-body">
+                        {modalLoading && !viewGrapherModal.email && !viewGrapherModal.bio ? (
+                            <div className="admin-modal-loading"><Loader2 className="spin" size={24} /> Đang tải...</div>
+                        ) : (
+                            <div className="admin-detail-grid">
+                                <div className="admin-detail-full" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+                                    <img src={viewGrapherModal.avatar || 'https://via.placeholder.com/80'} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
+                                    <div>
+                                        <h3 style={{ margin: '0 0 0.25rem 0' }}>{viewGrapherModal.name}</h3>
+                                        <p style={{ margin: 0, color: 'var(--text-muted)' }}>{viewGrapherModal.location}</p>
+                                    </div>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Đánh giá:</span>
+                                    <span className="admin-detail-value"><Star size={14} style={{ color: '#f59e0b', marginRight: 4 }} />{viewGrapherModal.rating} ({viewGrapherModal.reviewCount})</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Tổng doanh thu:</span>
+                                    <span className="admin-detail-value" style={{ color: 'var(--success-color)', fontWeight: 600 }}>{formatPrice(viewGrapherModal.totalRevenue)}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Tổng đơn:</span>
+                                    <span className="admin-detail-value">{viewGrapherModal.totalBookings}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Trạng thái KYC:</span>
+                                    <span className="admin-detail-value">{viewGrapherModal.kycStatus}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Xác thực:</span>
+                                    <span className="admin-detail-value">{viewGrapherModal.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Trạng thái TK:</span>
+                                    <span className="admin-detail-value">
+                                        <span className={`status-badge ${viewGrapherModal.isActive ? 'completed' : 'cancelled'}`}>
+                                            {viewGrapherModal.isActive ? 'Hoạt động' : 'Bị khóa'}
+                                        </span>
+                                    </span>
+                                </div>
+                                <div className="admin-detail-full">
+                                    <span className="admin-detail-label">Bio:</span>
+                                    <p style={{ margin: '0.5rem 0', color: 'var(--text-color)' }}>{viewGrapherModal.bio || 'Chưa cập nhật'}</p>
+                                </div>
+                                <div className="admin-detail-full">
+                                    <span className="admin-detail-label">Phong cách:</span>
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                        {viewGrapherModal.styles?.map(s => <span key={s} className="style-tag">{s}</span>)}
+                                    </div>
+                                </div>
+                                <div className="admin-detail-full">
+                                    <h3>Gói dịch vụ</h3>
+                                    {viewGrapherModal.packages?.length > 0 ? (
+                                        <table className="admin-table mini-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tên gói</th>
+                                                    <th>Thời lượng</th>
+                                                    <th>Giá</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {viewGrapherModal.packages.map(p => (
+                                                    <tr key={p.id}>
+                                                        <td>{p.name}</td>
+                                                        <td>{p.durationMinutes} phút</td>
+                                                        <td>{formatPrice(p.price)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <p className="text-muted">Chưa có gói dịch vụ.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {viewBookingModal && (
+            <div className="admin-modal-overlay" onClick={() => setViewBookingModal(null)}>
+                <div className="admin-modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="admin-modal-header">
+                        <h2>Chi tiết Đơn hàng</h2>
+                        <button className="admin-modal-close" onClick={() => setViewBookingModal(null)}><XCircle size={20} /></button>
+                    </div>
+                    <div className="admin-modal-body">
+                        {modalLoading && !viewBookingModal.serviceName ? (
+                            <div className="admin-modal-loading"><Loader2 className="spin" size={24} /> Đang tải...</div>
+                        ) : (
+                            <div className="admin-detail-grid">
+                                <div className="admin-detail-full" style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                                    <h3 style={{ margin: '0 0 0.5rem 0' }}>Mã đơn: {viewBookingModal.id}</h3>
+                                    <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Ngày tạo: {new Date(viewBookingModal.createdAt).toLocaleString('vi-VN')}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Khách hàng:</span>
+                                    <span className="admin-detail-value">{viewBookingModal.customerName}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Grapher:</span>
+                                    <span className="admin-detail-value">{viewBookingModal.grapherName}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Dịch vụ:</span>
+                                    <span className="admin-detail-value">{viewBookingModal.serviceName} ({viewBookingModal.durationMinutes} phút)</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Trạng thái đơn:</span>
+                                    <span className="admin-detail-value">{getStatusBadge(viewBookingModal.status)}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Ngày chụp:</span>
+                                    <span className="admin-detail-value">{new Date(viewBookingModal.scheduledAt).toLocaleString('vi-VN')}</span>
+                                </div>
+                                <div className="admin-detail-item">
+                                    <span className="admin-detail-label">Địa điểm:</span>
+                                    <span className="admin-detail-value">{viewBookingModal.location}</span>
+                                </div>
+                                <div className="admin-detail-full">
+                                    <span className="admin-detail-label">Ghi chú:</span>
+                                    <p style={{ margin: '0.5rem 0', color: 'var(--text-color)' }}>{viewBookingModal.note || 'Không có ghi chú'}</p>
+                                </div>
+                                {viewBookingModal.cancellationReason && (
+                                    <div className="admin-detail-full" style={{ color: 'var(--danger-color)' }}>
+                                        <span className="admin-detail-label">Lý do hủy:</span>
+                                        <p style={{ margin: '0.5rem 0' }}>{viewBookingModal.cancellationReason}</p>
+                                    </div>
+                                )}
+                                <div className="admin-detail-full" style={{ marginTop: '1rem' }}>
+                                    <h3>Thông tin thanh toán</h3>
+                                    {viewBookingModal.payment ? (
+                                        <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', marginTop: '0.5rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span>Cổng thanh toán:</span>
+                                                <strong>{viewBookingModal.payment.provider}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span>Trạng thái thanh toán:</span>
+                                                <strong>{viewBookingModal.payment.status}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span>Trạng thái Escrow:</span>
+                                                <strong>{viewBookingModal.payment.escrowStatus}</strong>
+                                            </div>
+                                            <hr style={{ borderTop: '1px solid var(--border-color)', margin: '0.5rem 0' }} />
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span>Tổng tiền:</span>
+                                                <strong>{formatPrice(viewBookingModal.totalAmount)}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                                <span>Phí nền tảng:</span>
+                                                <strong style={{ color: 'var(--danger-color)' }}>- {formatPrice(viewBookingModal.platformFeeAmount)}</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem' }}>
+                                                <span>Thực nhận (Grapher):</span>
+                                                <strong style={{ color: 'var(--success-color)' }}>{formatPrice(viewBookingModal.grapherPayoutAmount)}</strong>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted">Chưa có thông tin thanh toán.</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
+
