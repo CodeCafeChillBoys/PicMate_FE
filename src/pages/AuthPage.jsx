@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Camera, Eye, EyeOff, Phone } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 import './AuthPage.css';
+
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,8 +20,25 @@ export default function AuthPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setSuccessMsg('');
+    const credential = credentialResponse?.credential;
+    if (!credential) {
+      setError('Không nhận được thông tin từ Google. Vui lòng thử lại.');
+      return;
+    }
+    setLoading(true);
+    // Tài khoản tạo mới qua Google sẽ theo vai trò đang chọn ở tab đăng ký.
+    const mappedRole = role === 'photographer' ? 'grapher' : role;
+    const result = await loginWithGoogle(credential, mappedRole);
+    setLoading(false);
+    if (result.success) navigate(result.redirect || '/');
+    else setError(result.message);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,7 +190,23 @@ export default function AuthPage() {
               <button type="submit" className="btn btn-primary btn-lg auth-submit mt-4" id="auth-submit" disabled={loading}>
                 {loading ? 'Đang xử lý...' : isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}
               </button>
-              
+
+              {googleClientId && (
+                <>
+                  <div className="auth-divider"><span>hoặc</span></div>
+                  <div className="auth-google">
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={() => setError('Đăng nhập Google thất bại. Vui lòng thử lại.')}
+                      text={isLogin ? 'signin_with' : 'signup_with'}
+                      locale="vi"
+                      shape="rectangular"
+                      width="320"
+                    />
+                  </div>
+                </>
+              )}
+
               {isLogin && (
                   <div className="auth-footer-text">
                     Chưa có tài khoản? <button type="button" className="btn-link" onClick={() => { setIsLogin(false); setError(''); setSuccessMsg(''); }}>Đăng ký ngay</button>

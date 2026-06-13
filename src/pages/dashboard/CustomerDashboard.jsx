@@ -4,13 +4,13 @@ import {
     User, Clock, Camera, Settings, LogOut, Star, MapPin,
     MessageCircle, Calendar, Package, CreditCard, ChevronRight,
     Heart, Bell, Shield, Lock, Crown, Zap, Eye, Search,
-    Phone, Mail, Edit3, Upload, Check, X, Send, CheckCircle, XCircle
+    Phone, Mail, Edit3, Upload, Check, X, Send, CheckCircle, XCircle, AlertTriangle
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { API_BASE_URL } from '../../services/http';
 import { apiClient } from '../../services/apiClient';
-import { formatPrice } from '../../data/data';
+import { formatPrice, avatarFallback } from '../../data/data';
 import ChatComponent from '../../components/chat/ChatComponent';
 import toast from 'react-hot-toast';
 import './CustomerDashboard.css';
@@ -32,6 +32,20 @@ export default function CustomerDashboard() {
     const [showOrderDetail, setShowOrderDetail] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
+
+    // Review state
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [reviewOrder, setReviewOrder] = useState(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState('');
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+    // Dispute (khiếu nại) state
+    const [showDisputeModal, setShowDisputeModal] = useState(false);
+    const [disputeOrder, setDisputeOrder] = useState(null);
+    const [disputeReason, setDisputeReason] = useState('');
+    const [disputePriority, setDisputePriority] = useState('Medium');
+    const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
 
     // Profile Edit State
     const [showProfileModal, setShowProfileModal] = useState(false);
@@ -74,7 +88,8 @@ export default function CustomerDashboard() {
                         total: b.totalAmount,
                         status: statusMap[b.status] || 'pending',
                         rawStatus: b.status,
-                        note: b.note
+                        note: b.note,
+                        hasReview: b.hasReview
                     };
                 });
                 setOrders(mapped);
@@ -134,11 +149,17 @@ export default function CustomerDashboard() {
 
     const favoritePhotographers = photographers.filter(p => favoritePhotographerIds.includes(p.id));
 
+    // Chỉ tính tiền các đơn đã thanh toán (PendingPayment chưa trả, Cancelled được hoàn)
+    const totalSpent = orders
+        .filter(o => !['PendingPayment', 'Cancelled'].includes(o.rawStatus))
+        .reduce((sum, o) => sum + (o.total || 0), 0);
+    const completedOrdersCount = orders.filter(o => o.rawStatus === 'Completed').length;
+
     const userStats = [
-        { label: 'Tổng đơn hàng', value: '12', icon: <Package size={20} />, color: 'var(--primary)' },
-        { label: 'Đã chi tiêu', value: '2,400,000đ', icon: <CreditCard size={20} />, color: 'var(--accent-coral)' },
-        { label: 'Thợ yêu thích', value: '3', icon: <Heart size={20} />, color: '#e84393' },
-        { label: 'Đánh giá đã gửi', value: '8', icon: <Star size={20} />, color: 'var(--accent-gold)' },
+        { label: 'Tổng đơn hàng', value: String(orders.length), icon: <Package size={20} />, color: 'var(--primary)' },
+        { label: 'Đã chi tiêu', value: formatPrice(totalSpent), icon: <CreditCard size={20} />, color: 'var(--accent-coral)' },
+        { label: 'Thợ yêu thích', value: String(favoritePhotographers.length), icon: <Heart size={20} />, color: '#e84393' },
+        { label: 'Đơn hoàn thành', value: String(completedOrdersCount), icon: <CheckCircle size={20} />, color: 'var(--accent-gold)' },
     ];
 
     const activeOrdersCount = orders.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status?.toLowerCase())).length;
@@ -172,6 +193,49 @@ export default function CustomerDashboard() {
             setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, status: 'cancelled', rawStatus: 'Cancelled' } : o));
         } catch (err) {
             toast.error("Lỗi khi hủy đơn hàng. Vui lòng thử lại.");
+        }
+    };
+
+    const handleOpenReview = (order) => {
+        setReviewOrder(order);
+        setReviewRating(5);
+        setReviewComment('');
+        setShowReviewModal(true);
+    };
+
+    const handleSubmitReview = async () => {
+        if (!reviewOrder) return;
+        try {
+            setIsSubmittingReview(true);
+            await apiClient.createReview(reviewOrder.id, { rating: reviewRating, comment: reviewComment });
+            setOrders(prev => prev.map(o => o.id === reviewOrder.id ? { ...o, hasReview: true } : o));
+            toast.success('Cảm ơn bạn đã đánh giá!');
+            setShowReviewModal(false);
+        } catch (err) {
+            toast.error('Lỗi khi gửi đánh giá: ' + (err.response?.data?.title || err.message));
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    };
+
+    const handleOpenDispute = (order) => {
+        setDisputeOrder(order);
+        setDisputeReason('');
+        setDisputePriority('Medium');
+        setShowDisputeModal(true);
+    };
+
+    const handleSubmitDispute = async () => {
+        if (!disputeOrder || !disputeReason.trim()) return;
+        try {
+            setIsSubmittingDispute(true);
+            await apiClient.createDispute({ bookingId: disputeOrder.id, reason: disputeReason.trim(), priority: disputePriority });
+            toast.success('Đã gửi khiếu nại. Admin sẽ xử lý sớm.');
+            setShowDisputeModal(false);
+        } catch (err) {
+            toast.error('Lỗi khi gửi khiếu nại: ' + (err.response?.data?.title || err.message));
+        } finally {
+            setIsSubmittingDispute(false);
         }
     };
 
@@ -238,7 +302,7 @@ export default function CustomerDashboard() {
                     <aside className="dashboard-sidebar">
                         <div className="dashboard-profile">
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                                <img src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face"} alt={user?.name || "User"} className="avatar-lg" />
+                                <img src={user?.avatar || avatarFallback(user?.name)} alt={user?.name || "User"} className="avatar-lg" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(user?.name); }} />
                                 <button className="btn btn-icon btn-primary" style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', padding: 0 }} onClick={handleOpenProfileModal} title="Chỉnh sửa hồ sơ">
                                     <Edit3 size={16} />
                                 </button>
@@ -283,7 +347,7 @@ export default function CustomerDashboard() {
                             <>
                                 <div className="welcome-banner" id="welcome-banner">
                                     <div className="welcome-text">
-                                        <h2>Chào mừng trở lại, <span className="gradient-text">{user?.name ? user.name.split(' ').pop() : 'Khách'}</span>! 👋</h2>
+                                        <h2>Xin chào, <span className="gradient-text">{user?.name ? user.name.split(' ').pop() : 'Khách'}</span>! 👋</h2>
                                         <p>Quản lý đơn hàng, theo dõi thợ yêu thích và trải nghiệm dịch vụ chụp ảnh Phone-Graphy tốt nhất.</p>
                                         <div className="welcome-actions">
                                             <Link to="/explore" className="btn btn-primary btn-sm" id="dash-explore">
@@ -440,8 +504,19 @@ export default function CustomerDashboard() {
                                                             </button>
                                                         )}
                                                         {booking.status === 'completed' && (
-                                                            <button className="btn btn-ghost btn-sm" id={`review-${booking.id}`}>
-                                                                <Star size={14} /> Đánh giá
+                                                            booking.hasReview ? (
+                                                                <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                                    <Star size={12} fill="currentColor" /> Đã đánh giá
+                                                                </span>
+                                                            ) : (
+                                                                <button className="btn btn-ghost btn-sm" id={`review-${booking.id}`} onClick={() => handleOpenReview(booking)}>
+                                                                    <Star size={14} /> Đánh giá
+                                                                </button>
+                                                            )
+                                                        )}
+                                                        {(booking.status === 'confirmed' || booking.status === 'completed') && (
+                                                            <button className="btn btn-ghost btn-sm" id={`dispute-${booking.id}`} onClick={() => handleOpenDispute(booking)}>
+                                                                <AlertTriangle size={14} /> Khiếu nại
                                                             </button>
                                                         )}
                                                         {booking.status === 'pending' && (
@@ -571,7 +646,7 @@ export default function CustomerDashboard() {
                                 <div className="profile-section">
                                     <div className="profile-avatar-section">
                                         <div className="profile-avatar-large" style={{ position: 'relative' }}>
-                                            <img src={profileForm.avatarUrl || user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&crop=face"} alt="Avatar" />
+                                            <img src={profileForm.avatarUrl || user?.avatar || avatarFallback(user?.name)} alt="Avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(profileForm.fullName || user?.name); }} />
                                             <label className="profile-avatar-edit" style={{ cursor: 'pointer' }}>
                                                 <Upload size={16} />
                                                 <input type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} disabled={isProfileUpdating} />
@@ -585,6 +660,10 @@ export default function CustomerDashboard() {
                                     </div>
 
                                     <div className="profile-form">
+                                        <div className="input-group">
+                                            <label><Edit3 size={14} /> Link ảnh đại diện (URL)</label>
+                                            <input className="input" type="url" placeholder="Dán link ảnh, hoặc bấm icon tải ảnh ở avatar" value={profileForm.avatarUrl || ''} onChange={(e) => setProfileForm({...profileForm, avatarUrl: e.target.value})} disabled={isProfileUpdating} />
+                                        </div>
                                         <div className="profile-form-row">
                                             <div className="input-group">
                                                 <label><User size={14} /> Họ tên</label>
@@ -834,6 +913,85 @@ export default function CustomerDashboard() {
                 </div>
             )}
 
+            {/* Review Modal */}
+            {showReviewModal && reviewOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowReviewModal(false); }}>
+                    <div className="modal-content" style={{ maxWidth: '420px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0 }}>Đánh giá buổi chụp</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowReviewModal(false)}><X size={20} /></button>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                            Thợ: <strong>{reviewOrder.photographerName}</strong> · {reviewOrder.service}
+                        </p>
+                        <div className="review-stars">
+                            {[1, 2, 3, 4, 5].map(s => (
+                                <button key={s} type="button" className="review-star" onClick={() => setReviewRating(s)} aria-label={`${s} sao`}>
+                                    <Star size={32} fill={s <= reviewRating ? 'var(--accent-gold)' : 'none'} color="var(--accent-gold)" />
+                                </button>
+                            ))}
+                        </div>
+                        <div className="input-group" style={{ marginTop: '1rem' }}>
+                            <label>Nhận xét (không bắt buộc)</label>
+                            <textarea
+                                className="input"
+                                rows={4}
+                                placeholder="Chia sẻ cảm nhận của bạn về buổi chụp..."
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                disabled={isSubmittingReview}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowReviewModal(false)} disabled={isSubmittingReview}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSubmitReview} disabled={isSubmittingReview || reviewRating < 1}>
+                                {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Dispute (Khiếu nại) Modal */}
+            {showDisputeModal && disputeOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowDisputeModal(false); }}>
+                    <div className="modal-content" style={{ maxWidth: '440px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0 }}>Gửi khiếu nại</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowDisputeModal(false)}><X size={20} /></button>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                            Về đơn với <strong>{disputeOrder.photographerName}</strong> · {disputeOrder.service}
+                        </p>
+                        <div className="input-group" style={{ marginBottom: '1rem' }}>
+                            <label>Mức độ</label>
+                            <select className="input" value={disputePriority} onChange={(e) => setDisputePriority(e.target.value)} disabled={isSubmittingDispute}>
+                                <option value="Medium">Bình thường</option>
+                                <option value="High">Nghiêm trọng</option>
+                                <option value="Urgent">Khẩn cấp</option>
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Lý do khiếu nại</label>
+                            <textarea
+                                className="input"
+                                rows={4}
+                                placeholder="Mô tả vấn đề bạn gặp phải..."
+                                value={disputeReason}
+                                onChange={(e) => setDisputeReason(e.target.value)}
+                                disabled={isSubmittingDispute}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowDisputeModal(false)} disabled={isSubmittingDispute}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSubmitDispute} disabled={isSubmittingDispute || !disputeReason.trim()}>
+                                {isSubmittingDispute ? 'Đang gửi...' : 'Gửi khiếu nại'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Profile Edit Modal */}
             {showProfileModal && (
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowProfileModal(false); }}>
@@ -844,7 +1002,7 @@ export default function CustomerDashboard() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                             <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-                                <img src={profileForm.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face'} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                                <img src={profileForm.avatarUrl || avatarFallback(profileForm.fullName)} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(profileForm.fullName); }} />
                                 <label className="btn btn-primary btn-icon" style={{ position: 'absolute', bottom: 0, right: 0, cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', padding: 0 }}>
                                     <Upload size={16} />
                                     <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} disabled={isProfileUpdating} />
@@ -853,6 +1011,10 @@ export default function CustomerDashboard() {
                             <div className="input-group" style={{ width: '100%' }}>
                                 <label>Họ và tên</label>
                                 <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} disabled={isProfileUpdating} />
+                            </div>
+                            <div className="input-group" style={{ width: '100%' }}>
+                                <label>Hoặc dán link ảnh (URL)</label>
+                                <input className="input" type="url" placeholder="https://..." value={profileForm.avatarUrl || ''} onChange={(e) => setProfileForm({...profileForm, avatarUrl: e.target.value})} disabled={isProfileUpdating} />
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>

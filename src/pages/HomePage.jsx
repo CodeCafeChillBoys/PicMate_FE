@@ -99,22 +99,22 @@ export default function HomePage() {
                     <div className="section-header">
                         <span className="section-label">Cách hoạt động</span>
                         <h2>Đặt lịch chụp ảnh trong <span className="gradient-text">3 bước</span></h2>
-                        <p>Quy trình đơn giản, nhanh chóng, an toàn với hệ thống escrow bảo vệ cả hai bên.</p>
+                        <p>Quy trình đơn giản, nhanh chóng – thanh toán được đảm bảo an toàn cho cả hai bên.</p>
                     </div>
                     <div className="steps-grid">
                         {[
-                            { icon: <Search size={32} />, title: "Tìm & Chọn", desc: "Tìm Phone-Grapher theo phong cách, địa điểm, giá. Xem portfolio và review thực tế.", color: "var(--primary)" },
-                            { icon: <CreditCard size={32} />, title: "Đặt lịch & Thanh toán", desc: "Chọn ngày giờ, dịch vụ. Thanh toán an toàn – tiền được giữ escrow cho đến khi hoàn thành.", color: "var(--accent-coral)" },
-                            { icon: <Camera size={32} />, title: "Chụp & Nhận ảnh", desc: "Gặp thợ, chụp ảnh / quay content. Nhận ảnh đẹp lung linh và bấm \"Hoàn thành\"!", color: "var(--accent-green)" },
+                            { icon: <Search size={32} />, title: "Tìm & Chọn", desc: "Tìm Phone-Grapher theo phong cách, địa điểm, giá. Xem portfolio và review thực tế.", color: "var(--primary)", link: "/explore" },
+                            { icon: <CreditCard size={32} />, title: "Đặt lịch & Thanh toán", desc: "Chọn ngày giờ, dịch vụ. Thanh toán an toàn – tiền được PICMate đảm bảo cho đến khi hoàn thành.", color: "var(--accent-coral)", link: "/explore" },
+                            { icon: <Camera size={32} />, title: "Chụp & Nhận ảnh", desc: "Gặp thợ, chụp ảnh / quay content. Nhận ảnh đẹp lung linh và bấm \"Hoàn thành\"!", color: "var(--accent-green)", link: "/customer-dashboard" },
                         ].map((step, i) => (
-                            <div key={i} className="step-card animate-fade-in-up" style={{ animationDelay: `${i * 0.15}s` }}>
+                            <Link to={step.link} key={i} className="step-card animate-fade-in-up" style={{ animationDelay: `${i * 0.15}s` }}>
                                 <div className="step-number">{String(i + 1).padStart(2, '0')}</div>
                                 <div className="step-icon" style={{ background: `${step.color}15`, color: step.color }}>
                                     {step.icon}
                                 </div>
                                 <h3>{step.title}</h3>
                                 <p>{step.desc}</p>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </div>

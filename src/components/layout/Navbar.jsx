@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search, Camera, User, ChevronDown, LogOut, LayoutDashboard, Shield } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import NotificationBell from './NotificationBell';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -144,6 +145,7 @@ export default function Navbar() {
                 )}
 
                 <div className="navbar-actions">
+                    {user && <NotificationBell />}
                     {user ? (
                         <div className="user-menu" ref={dropdownRef}>
                             <button

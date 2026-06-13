@@ -223,6 +223,59 @@
     font-size: 1.2rem;
 }
 
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin: var(--space-lg) 0 var(--space-md);
+}
+
+@media (max-width: 560px) {
+    .payment-methods { grid-template-columns: 1fr; }
+}
+
+.payment-method-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-base);
+}
+
+.payment-method-card:hover {
+    border-color: var(--primary-light);
+}
+
+.payment-method-card.active {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.06);
+}
+
+.payment-method-card svg {
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.payment-method-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.payment-method-text strong {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.payment-method-text span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
 .escrow-notice {
     display: flex;
     gap: var(--space-md);

@@ -206,7 +206,7 @@ export default function PhotographerProfile() {
                             <div className="profile-trust">
                                 <div className="trust-item">
                                     <Shield size={16} />
-                                    <span>Thanh toán an toàn (Escrow)</span>
+                                    <span>Thanh toán được đảm bảo an toàn</span>
                                 </div>
                                 <div className="trust-item">
                                     <CheckCircle size={16} />
