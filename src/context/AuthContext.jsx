@@ -67,30 +67,48 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
+  // Lưu token + user từ AuthResponse (dùng chung cho login thường và login Google)
+  const applyAuthResponse = (response) => {
+    const userData = {
+      id: response.id,
+      name: response.name,
+      email: response.email,
+      // normalize role using mapRole so "grapher" → "photographer" etc.
+      role: mapRole(response.role),
+      avatar: response.avatar,
+      redirect: response.redirect,
+    };
+
+    // Persist tokens/user first so other code can read them immediately
+    localStorage.setItem('picmate_user', JSON.stringify(userData));
+    if (response.accessToken) localStorage.setItem('picmate_access_token', response.accessToken);
+    if (response.refreshToken) localStorage.setItem('picmate_refresh_token', response.refreshToken);
+
+    setUser(userData);
+    return userData;
+  };
+
   const login = async (email, password) => {
     setAuthLoading(true);
     try {
       const response = await apiClient.login(email, password);
-      const userData = {
-        id: response.id,
-        name: response.name,
-        email: response.email,
-        // normalize role using mapRole so "grapher" → "photographer" etc.
-        role: mapRole(response.role),
-        avatar: response.avatar,
-        redirect: response.redirect,
-      };
-
-      // Persist tokens/user first so other code can read them immediately
-      localStorage.setItem('picmate_user', JSON.stringify(userData));
-      if (response.accessToken) localStorage.setItem('picmate_access_token', response.accessToken);
-      if (response.refreshToken) localStorage.setItem('picmate_refresh_token', response.refreshToken);
-
-      setUser(userData);
-
-      return { success: true, redirect: response.redirect || '/' };
+      const userData = applyAuthResponse(response);
+      return { success: true, redirect: userData.redirect || '/' };
     } catch (error) {
       return { success: false, message: error.message || 'Email hoặc mật khẩu không đúng!' };
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async (credential, role) => {
+    setAuthLoading(true);
+    try {
+      const response = await apiClient.googleAuth(credential, role);
+      const userData = applyAuthResponse(response);
+      return { success: true, redirect: userData.redirect || '/' };
+    } catch (error) {
+      return { success: false, message: error.message || 'Đăng nhập Google thất bại!' };
     } finally {
       setAuthLoading(false);
     }
@@ -110,7 +128,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, authLoading }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, logout, updateUser, authLoading }}>
       {children}
     </AuthContext.Provider>
   );

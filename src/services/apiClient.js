@@ -3,7 +3,12 @@ import http, { API_BASE_URL } from './http';
 export const apiClient = {
   getBootstrap: () => http.get('/api/bootstrap').then(res => res.data),
   login: (email, password) => http.post('/api/auth/login', { email, password }).then(res => res.data),
+  googleAuth: (credential, role) => http.post('/api/auth/google', { credential, role }).then(res => res.data),
   me: () => http.get('/api/auth/me').then(res => res.data),
+  getNotifications: () => http.get('/api/notifications').then(res => res.data),
+  getUnreadNotifCount: () => http.get('/api/notifications/unread-count').then(res => res.data),
+  markNotifRead: (id) => http.put(`/api/notifications/${id}/read`).then(res => res.data),
+  markAllNotifRead: () => http.put('/api/notifications/read-all').then(res => res.data),
   createBooking: (payload) => http.post('/api/bookings', payload).then(res => res.data),
   getGrapherOrders: (status) => {
     const params = status && status !== 'all' ? { status } : {};
@@ -16,12 +21,20 @@ export const apiClient = {
   register: (data) => http.post('/api/auth/register', data).then(res => res.data),
   updateProfile: (data) => http.put('/api/users/me', data).then(res => res.data),
   cancelBooking: (id, reason) => http.post(`/api/bookings/${id}/cancel`, { reason }).then(res => res.data),
+  createReview: (bookingId, data) => http.post(`/api/bookings/${bookingId}/reviews`, data).then(res => res.data),
+  createDispute: (data) => http.post('/api/disputes', data).then(res => res.data),
   confirmBooking: (id) => http.post(`/api/bookings/${id}/confirm`).then(res => res.data),
   startBooking: (id) => http.post(`/api/bookings/${id}/start`).then(res => res.data),
   completeBooking: (id) => http.post(`/api/bookings/${id}/complete`).then(res => res.data),
   getBookingDetail: (id) => http.get(`/api/bookings/${id}/detail`).then(res => res.data),
   getGrapherProfile: (id) => http.get(`/api/graphers/${id}`).then(res => res.data),
+  getMyGrapherProfile: () => http.get('/api/graphers/me').then(res => res.data),
+  setOnlineStatus: (isOnline) => http.put('/api/graphers/me/online', { isOnline }).then(res => res.data),
   seedDefaultPackages: () => http.post('/api/graphers/me/seed-packages').then(res => res.data),
+  getMyServices: () => http.get('/api/graphers/me/services').then(res => res.data),
+  addService: (data) => http.post('/api/graphers/me/services', data).then(res => res.data),
+  updateService: (id, data) => http.put(`/api/graphers/me/services/${id}`, data).then(res => res.data),
+  deleteService: (id) => http.delete(`/api/graphers/me/services/${id}`).then(res => res.data),
   uploadImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);

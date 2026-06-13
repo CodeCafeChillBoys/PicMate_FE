@@ -44,7 +44,7 @@
 
   /* Typography */
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Outfit', 'Inter', sans-serif;
+  --font-heading: 'Be Vietnam Pro', 'Inter', sans-serif;
 
   /* Spacing */
   --space-xs: 0.25rem;
@@ -200,6 +200,15 @@ input, textarea, select {
   border-radius: var(--radius-full);
   transition: all var(--transition-base);
   white-space: nowrap;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: grayscale(0.3);
 }
 
 .btn-primary {

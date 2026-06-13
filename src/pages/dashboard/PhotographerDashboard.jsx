@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import {
     Camera, DollarSign, TrendingUp, Clock, Package, Users, Settings, LogOut,
     Eye, ToggleLeft, ToggleRight, Star, MapPin, Calendar, CheckCircle, Zap, Image,
-    XCircle, MessageCircle, Upload, Heart, Trash2, Filter, Plus, Maximize2, Edit, CreditCard
+    XCircle, MessageCircle, Upload, Heart, Trash2, Filter, Plus, Maximize2, Edit, CreditCard, AlertTriangle
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { apiClient, formatPrice } from '../../services/apiClient';
+import { avatarFallback } from '../../data/data';
 import { API_BASE_URL } from '../../services/http';
 import http from '../../services/http';
 import ChatComponent from '../../components/chat/ChatComponent';
@@ -15,7 +16,7 @@ import './PhotographerDashboard.css';
 
 export default function PhotographerDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
-    const [isOnline, setIsOnline] = useState(true);
+    const [isOnline, setIsOnline] = useState(false);
     const [orderFilter, setOrderFilter] = useState('all');
     const [orders, setOrders] = useState([]);
     const [ordersLoading, setOrdersLoading] = useState(true);
@@ -28,7 +29,14 @@ export default function PhotographerDashboard() {
     const [showOrderDetail, setShowOrderDetail] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
-    
+
+    // Dispute (khiếu nại) state
+    const [showDisputeModal, setShowDisputeModal] = useState(false);
+    const [disputeOrder, setDisputeOrder] = useState(null);
+    const [disputeReason, setDisputeReason] = useState('');
+    const [disputePriority, setDisputePriority] = useState('Medium');
+    const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
+
     // Services state
     const [services, setServices] = useState([]);
     const [servicesLoading, setServicesLoading] = useState(false);
@@ -79,6 +87,7 @@ export default function PhotographerDashboard() {
                         status: mapStatus(b.status),
                         total: b.totalAmount,
                         payout: b.grapherPayoutAmount,
+                        scheduledAt: b.scheduledAt,
                     })));
                 }
             })
@@ -108,9 +117,10 @@ export default function PhotographerDashboard() {
         const fetchProfile = async () => {
             if (!user || !user.id) return;
             try {
-                const profile = await apiClient.getGrapherProfile(user.id);
+                const profile = await apiClient.getMyGrapherProfile();
                 setGrapherProfile(profile);
                 setPortfolio(profile.portfolio || []);
+                setIsOnline(!!profile.isOnline);
             } catch (err) {
                 console.error('Failed to fetch grapher profile:', err);
             }
@@ -121,21 +131,15 @@ export default function PhotographerDashboard() {
         return () => { cancelled = true; };
     }, [user]);
 
-    // Fetch services when services tab is active
+    // Fetch services ngay khi vào dashboard (không chờ mở tab Dịch vụ) để các thao tác
+    // portfolio dùng chung state `services` không vô tình gửi danh sách rỗng → xoá hết gói.
     useEffect(() => {
-        if (activeTab !== 'services') return;
+        if (!user || !user.id) return;
         const fetchServices = async () => {
             setServicesLoading(true);
             try {
-                // Use the grapher's own profile to get packages
-                const res = await fetch(`${API_BASE_URL}/api/graphers/me/seed-packages`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('picmate_access_token')}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setServices(data);
-                }
+                const data = await apiClient.getMyServices();
+                setServices(data);
             } catch (err) {
                 console.error('Failed to fetch services:', err);
             } finally {
@@ -143,7 +147,7 @@ export default function PhotographerDashboard() {
             }
         };
         fetchServices();
-    }, [activeTab]);
+    }, [user]);
 
     const handleOpenAddService = () => {
         setEditingService(null);
@@ -158,36 +162,34 @@ export default function PhotographerDashboard() {
     };
 
     const handleSaveService = async () => {
-        const updatedList = editingService
-            ? services.map(s => s.id === editingService.id ? { ...s, name: serviceForm.name, description: serviceForm.description, price: Number(serviceForm.price), durationMinutes: Number(serviceForm.durationMinutes) } : s)
-            : [...services, { id: null, name: serviceForm.name, description: serviceForm.description, price: Number(serviceForm.price), durationMinutes: Number(serviceForm.durationMinutes) }];
-        
+        const payload = {
+            name: serviceForm.name.trim(),
+            description: serviceForm.description.trim(),
+            price: Number(serviceForm.price),
+            durationMinutes: Number(serviceForm.durationMinutes),
+        };
         try {
-            // Call UpsertProfile to save packages
-            const payload = {
-                bio: grapherProfile?.bio || '',
-                location: grapherProfile?.location || '',
-                styles: grapherProfile?.styles || [],
-                portfolio: portfolio,
-                servicePackages: updatedList.map(s => ({
-                    id: s.id || undefined,
-                    name: s.name,
-                    description: s.description,
-                    price: s.price,
-                    durationMinutes: s.durationMinutes
-                }))
-            };
-            await http.put('/api/graphers/me', payload);
-            // Refetch
-            const res = await fetch(`${API_BASE_URL}/api/graphers/me/seed-packages`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('picmate_access_token')}` }
-            });
-            if (res.ok) setServices(await res.json());
+            if (editingService) {
+                await apiClient.updateService(editingService.id, payload);
+            } else {
+                await apiClient.addService(payload);
+            }
+            setServices(await apiClient.getMyServices());
             setShowServiceModal(false);
-            toast.success('Lưu dịch vụ thành công!');
+            toast.success(editingService ? 'Cập nhật dịch vụ thành công!' : 'Thêm dịch vụ thành công!');
         } catch (err) {
             toast.error('Lỗi khi lưu dịch vụ: ' + (err.response?.data?.title || err.message));
+        }
+    };
+
+    const handleDeleteService = async (id) => {
+        if (!window.confirm('Bạn chắc chắn muốn xoá dịch vụ này?')) return;
+        try {
+            await apiClient.deleteService(id);
+            setServices(await apiClient.getMyServices());
+            toast.success('Đã xoá dịch vụ');
+        } catch (err) {
+            toast.error('Lỗi khi xoá dịch vụ: ' + (err.response?.data?.title || err.message));
         }
     };
 
@@ -270,6 +272,18 @@ export default function PhotographerDashboard() {
         }
     };
 
+    const handleToggleOnline = async () => {
+        const next = !isOnline;
+        setIsOnline(next); // cập nhật giao diện trước
+        try {
+            await apiClient.setOnlineStatus(next);
+            toast.success(next ? 'Bạn đang Online' : 'Đã chuyển sang Offline');
+        } catch (err) {
+            setIsOnline(!next); // lỗi thì hoàn lại
+            toast.error('Không thể cập nhật trạng thái: ' + (err.message || 'Vui lòng thử lại'));
+        }
+    };
+
     const handleAddPortfolio = async () => {
         if (!newPortfolioUrl) return;
         const updatedPortfolio = [...portfolio, newPortfolioUrl];
@@ -321,31 +335,6 @@ export default function PhotographerDashboard() {
         }
     };
 
-    const handleDeleteService = async (svcId) => {
-        if (!confirm('Bạn có chắc muốn xóa dịch vụ này?')) return;
-        const updatedList = services.filter(s => s.id !== svcId);
-        try {
-            const payload = {
-                bio: grapherProfile?.bio || '',
-                location: grapherProfile?.location || '',
-                styles: grapherProfile?.styles || [],
-                portfolio: portfolio,
-                servicePackages: updatedList.map(s => ({
-                    id: s.id || undefined,
-                    name: s.name,
-                    description: s.description,
-                    price: s.price,
-                    durationMinutes: s.durationMinutes
-                }))
-            };
-            await http.put('/api/graphers/me', payload);
-            setServices(updatedList);
-            toast.success('Xóa dịch vụ thành công!');
-        } catch (err) {
-            toast.error('Lỗi khi xóa dịch vụ');
-        }
-    };
-
     const getRoleLabel = (role) => {
         if (!role) return 'Phone-Grapher';
         const r = String(role).toLowerCase();
@@ -380,11 +369,24 @@ export default function PhotographerDashboard() {
     const pendingCount = orders.filter(b => b.status === 'pending').length;
     const confirmedCount = orders.filter(b => b.status === 'confirmed').length;
 
+    const completedOrders = orders.filter(b => b.status === 'completed');
+    const now = new Date();
+    const monthlyRevenue = completedOrders
+        .filter(b => {
+            const d = new Date(b.scheduledAt);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        })
+        .reduce((sum, b) => sum + (b.payout || 0), 0);
+    const activeCount = orders.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status)).length;
+    const ratingValue = grapherProfile?.reviewCount > 0
+        ? `${Number(grapherProfile.rating).toFixed(1)} ⭐`
+        : 'Chưa có';
+
     const stats = [
-        { label: 'Doanh thu tháng', value: '3,200,000đ', icon: <DollarSign size={20} />, color: 'var(--accent-green)' },
-        { label: 'Đơn hoàn thành', value: '24', icon: <CheckCircle size={20} />, color: 'var(--primary)' },
-        { label: 'Đánh giá TB', value: '4.9 ⭐', icon: <Star size={20} />, color: 'var(--accent-gold)' },
-        { label: 'Lượt xem hồ sơ', value: '1,245', icon: <Eye size={20} />, color: 'var(--accent-coral)' },
+        { label: 'Doanh thu tháng', value: formatPrice(monthlyRevenue), icon: <DollarSign size={20} />, color: 'var(--accent-green)' },
+        { label: 'Đơn hoàn thành', value: String(completedOrders.length), icon: <CheckCircle size={20} />, color: 'var(--primary)' },
+        { label: 'Đánh giá TB', value: ratingValue, icon: <Star size={20} />, color: 'var(--accent-gold)' },
+        { label: 'Đơn đang xử lý', value: String(activeCount), icon: <Clock size={20} />, color: 'var(--accent-coral)' },
     ];
 
     const handleViewBookingDetails = async (id) => {
@@ -429,6 +431,27 @@ export default function PhotographerDashboard() {
         }
     };
 
+    const handleOpenDispute = (order) => {
+        setDisputeOrder(order);
+        setDisputeReason('');
+        setDisputePriority('Medium');
+        setShowDisputeModal(true);
+    };
+
+    const handleSubmitDispute = async () => {
+        if (!disputeOrder || !disputeReason.trim()) return;
+        try {
+            setIsSubmittingDispute(true);
+            await apiClient.createDispute({ bookingId: disputeOrder.id, reason: disputeReason.trim(), priority: disputePriority });
+            toast.success('Đã gửi khiếu nại. Admin sẽ xử lý sớm.');
+            setShowDisputeModal(false);
+        } catch (err) {
+            toast.error('Lỗi khi gửi khiếu nại: ' + (err.response?.data?.title || err.message));
+        } finally {
+            setIsSubmittingDispute(false);
+        }
+    };
+
     const getOrderActions = (booking) => {
         switch (booking.status) {
             case 'pending':
@@ -448,10 +471,13 @@ export default function PhotographerDashboard() {
             case 'confirmed':
                 return (
                     <div className="order-actions">
-                        <button className="btn btn-ghost btn-sm" onClick={() => { 
+                        <button className="btn btn-ghost btn-sm" onClick={() => {
                             setSelectedChatUser({ id: booking.customerId, fullName: booking.photographerName, avatarUrl: booking.photographerAvatar, role: 'Customer' });
                         }}>
                             <MessageCircle size={14} /> Liên hệ
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenDispute(booking)}>
+                            <AlertTriangle size={14} /> Khiếu nại
                         </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
                             Chi tiết
@@ -464,10 +490,13 @@ export default function PhotographerDashboard() {
                         <button className="btn btn-primary btn-sm" onClick={() => handleCompleteBooking(booking.id)}>
                             <CheckCircle size={14} /> Hoàn thành
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => { 
+                        <button className="btn btn-ghost btn-sm" onClick={() => {
                             setSelectedChatUser({ id: booking.customerId, fullName: booking.photographerName, avatarUrl: booking.photographerAvatar, role: 'Customer' });
                         }}>
                             <MessageCircle size={14} /> Liên hệ
+                        </button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenDispute(booking)}>
+                            <AlertTriangle size={14} /> Khiếu nại
                         </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
                             Chi tiết
@@ -478,6 +507,9 @@ export default function PhotographerDashboard() {
                 return (
                     <div className="order-actions">
                         <span className="badge badge-success">✅ Đã hoàn thành</span>
+                        <button className="btn btn-ghost btn-sm" onClick={() => handleOpenDispute(booking)}>
+                            <AlertTriangle size={14} /> Khiếu nại
+                        </button>
                         <button className="btn btn-ghost btn-sm" onClick={() => handleViewBookingDetails(booking.id)}>
                             Chi tiết
                         </button>
@@ -504,7 +536,7 @@ export default function PhotographerDashboard() {
                     <aside className="dashboard-sidebar">
                         <div className="dashboard-profile">
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                                <img src={user?.avatar || 'https://via.placeholder.com/200?text=Avatar'} alt={user?.name || 'Photographer'} className="avatar-lg" />
+                                <img src={user?.avatar || avatarFallback(user?.name)} alt={user?.name || 'Photographer'} className="avatar-lg" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(user?.name); }} />
                                 <button className="btn btn-icon btn-primary" style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', borderRadius: '50%', padding: 0 }} onClick={handleOpenProfileModal} title="Chỉnh sửa hồ sơ">
                                     <Edit size={16} />
                                 </button>
@@ -514,7 +546,7 @@ export default function PhotographerDashboard() {
                         </div>
 
                         <div className="online-toggle" id="online-toggle">
-                            <button className={`online-btn ${isOnline ? 'active' : ''}`} onClick={() => setIsOnline(!isOnline)}>
+                            <button className={`online-btn ${isOnline ? 'active' : ''}`} onClick={handleToggleOnline}>
                                 {isOnline ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
                                 <span>{isOnline ? 'Đang Online' : 'Offline'}</span>
                             </button>
@@ -951,6 +983,46 @@ export default function PhotographerDashboard() {
                 </div>
             )}
 
+            {/* Dispute (Khiếu nại) Modal */}
+            {showDisputeModal && disputeOrder && (
+                <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowDisputeModal(false); }}>
+                    <div className="modal-content" style={{ maxWidth: '440px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0 }}>Gửi khiếu nại</h3>
+                            <button className="btn btn-icon btn-ghost" onClick={() => setShowDisputeModal(false)}><XCircle size={20} /></button>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                            Về đơn với khách <strong>{disputeOrder.photographerName}</strong>
+                        </p>
+                        <div className="input-group" style={{ marginBottom: '1rem' }}>
+                            <label>Mức độ</label>
+                            <select className="input" value={disputePriority} onChange={(e) => setDisputePriority(e.target.value)} disabled={isSubmittingDispute}>
+                                <option value="Medium">Bình thường</option>
+                                <option value="High">Nghiêm trọng</option>
+                                <option value="Urgent">Khẩn cấp</option>
+                            </select>
+                        </div>
+                        <div className="input-group">
+                            <label>Lý do khiếu nại</label>
+                            <textarea
+                                className="input"
+                                rows={4}
+                                placeholder="Mô tả vấn đề bạn gặp phải..."
+                                value={disputeReason}
+                                onChange={(e) => setDisputeReason(e.target.value)}
+                                disabled={isSubmittingDispute}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                            <button className="btn btn-ghost" onClick={() => setShowDisputeModal(false)} disabled={isSubmittingDispute}>Hủy</button>
+                            <button className="btn btn-primary" onClick={handleSubmitDispute} disabled={isSubmittingDispute || !disputeReason.trim()}>
+                                {isSubmittingDispute ? 'Đang gửi...' : 'Gửi khiếu nại'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Service Add/Edit Modal */}
             {showServiceModal && (
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowServiceModal(false); }}>
@@ -999,7 +1071,7 @@ export default function PhotographerDashboard() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
                             <div style={{ position: 'relative', width: '120px', height: '120px' }}>
-                                <img src={profileForm.avatarUrl || 'https://via.placeholder.com/200?text=Avatar'} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                                <img src={profileForm.avatarUrl || avatarFallback(profileForm.fullName)} alt="Avatar Preview" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(profileForm.fullName); }} />
                                 <label className="btn btn-primary btn-icon" style={{ position: 'absolute', bottom: 0, right: 0, cursor: 'pointer', borderRadius: '50%', width: '36px', height: '36px', padding: 0 }}>
                                     <Upload size={16} />
                                     <input type="file" style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} disabled={isProfileUpdating} />
@@ -1008,6 +1080,10 @@ export default function PhotographerDashboard() {
                             <div className="input-group" style={{ width: '100%' }}>
                                 <label>Họ và tên</label>
                                 <input className="input" value={profileForm.fullName} onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})} disabled={isProfileUpdating} />
+                            </div>
+                            <div className="input-group" style={{ width: '100%' }}>
+                                <label>Hoặc dán link ảnh (URL)</label>
+                                <input className="input" type="url" placeholder="https://..." value={profileForm.avatarUrl || ''} onChange={(e) => setProfileForm({...profileForm, avatarUrl: e.target.value})} disabled={isProfileUpdating} />
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>

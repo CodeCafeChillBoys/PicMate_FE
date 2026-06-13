@@ -28,8 +28,9 @@ export default function InstantPage() {
         return () => clearInterval(timer);
     }, []);
 
-    const instantPhotographers = photographers.filter(p => p.isOnline && p.instantBooking);
-    const onlinePhotographers = photographers.filter(p => p.isOnline && !p.instantBooking);
+    // Hệ thống chưa có cờ "instant booking" riêng → coi mọi thợ đang Online đều sẵn sàng đặt ngay.
+    const instantPhotographers = photographers.filter(p => p.isOnline);
+    const onlinePhotographers = [];
 
     const timeOptions = [
         { value: 'now', label: 'Ngay bây giờ', icon: <Zap size={16} />, desc: 'Chụp trong 15 phút' },
@@ -178,7 +179,7 @@ export default function InstantPage() {
                                 step: '03',
                                 icon: <Camera size={28} />,
                                 title: 'Gặp & Chụp',
-                                desc: 'Gặp thợ tại địa điểm, chụp ảnh / quay content. Thanh toán an toàn qua escrow.',
+                                desc: 'Gặp thợ tại địa điểm, chụp ảnh / quay content. Thanh toán được đảm bảo an toàn.',
                                 color: 'var(--accent-green)',
                                 highlight: 'Done!',
                             },
@@ -402,7 +403,7 @@ export default function InstantPage() {
                                     <div className="instant-summary-divider" />
                                     <div className="instant-summary-row instant-summary-note">
                                         <Shield size={14} />
-                                        <span>Thanh toán an toàn qua hệ thống escrow PICMate</span>
+                                        <span>Thanh toán an toàn, được PICMate đảm bảo</span>
                                     </div>
                                 </div>
 

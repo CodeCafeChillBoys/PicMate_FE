@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
     Calendar, Clock, MapPin, Camera, FileText, ChevronLeft, ChevronRight,
-    CheckCircle, CreditCard, Shield, Zap, Award, Star
+    CheckCircle, CreditCard, Shield, Zap, Award, Star, Wallet
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
 import { formatPrice } from '../data/data';
@@ -25,6 +25,7 @@ export default function BookingPage() {
         note: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('vnpay');
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -84,19 +85,20 @@ export default function BookingPage() {
             
             // Send the real grapherProfileId and servicePackageId
             const payload = {
-                grapherProfileId: photographer.id, 
+                grapherProfileId: photographer.id,
                 servicePackageId: servicePackage.id,
                 scheduledAt: new Date(`${booking.date}T${booking.time}:00+07:00`).toISOString(),
                 location: booking.location,
                 note: booking.note,
+                paymentMethod,
             };
 
             const response = await apiClient.createBooking(payload);
             if (response.paymentUrl) {
                 window.location.href = response.paymentUrl;
             } else {
-                toast.success('Đặt lịch thành công!');
-                window.location.href = '/customer/dashboard';
+                toast.success('Đặt lịch thành công! Bạn sẽ trả tiền mặt khi gặp thợ.');
+                window.location.href = '/customer-dashboard';
             }
         } catch (err) {
             console.error(err);
@@ -271,9 +273,27 @@ export default function BookingPage() {
                                         <strong>{formatPrice(services.find(s => s.name === booking.service)?.price || 0)}</strong>
                                     </div>
                                 </div>
+                                <div className="payment-methods">
+                                    <button type="button" className={`payment-method-card ${paymentMethod === 'vnpay' ? 'active' : ''}`} onClick={() => setPaymentMethod('vnpay')}>
+                                        <CreditCard size={22} />
+                                        <div className="payment-method-text">
+                                            <strong>Thanh toán online (VNPay)</strong>
+                                            <span>Thanh toán ngay qua thẻ / ngân hàng</span>
+                                        </div>
+                                    </button>
+                                    <button type="button" className={`payment-method-card ${paymentMethod === 'cod' ? 'active' : ''}`} onClick={() => setPaymentMethod('cod')}>
+                                        <Wallet size={22} />
+                                        <div className="payment-method-text">
+                                            <strong>Trả sau (tiền mặt)</strong>
+                                            <span>Trả trực tiếp cho thợ khi gặp</span>
+                                        </div>
+                                    </button>
+                                </div>
                                 <div className="escrow-notice">
                                     <Shield size={18} />
-                                    <p>Số tiền sẽ được giữ an toàn (Escrow). Sau khi bạn bấm "Hoàn thành", PICMate trừ 15% phí dịch vụ và giải ngân cho thợ.</p>
+                                    <p>{paymentMethod === 'vnpay'
+                                        ? 'Số tiền của bạn được PICMate đảm bảo an toàn cho đến khi buổi chụp hoàn tất.'
+                                        : 'Bạn sẽ trả tiền mặt trực tiếp cho thợ khi buổi chụp diễn ra. Đơn sẽ chờ thợ xác nhận sau khi đặt.'}</p>
                                 </div>
                             </div>
                         )}
@@ -304,6 +324,8 @@ export default function BookingPage() {
                                 >
                                     {isSubmitting ? (
                                         'Đang xử lý...'
+                                    ) : paymentMethod === 'cod' ? (
+                                        <><Wallet size={18} /> Đặt lịch (trả sau)</>
                                     ) : (
                                         <><CreditCard size={18} /> Xác nhận & Thanh toán</>
                                     )}

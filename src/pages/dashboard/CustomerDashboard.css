@@ -1091,3 +1091,24 @@
         font-size: 0.78rem;
     }
 }
+
+/* ===== Review stars ===== */
+.review-stars {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: var(--space-sm) 0;
+}
+
+.review-star {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    line-height: 0;
+    transition: transform var(--transition-fast);
+}
+
+.review-star:hover {
+    transform: scale(1.15);
+}
