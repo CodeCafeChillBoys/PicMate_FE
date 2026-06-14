@@ -500,7 +500,7 @@ export default function CustomerDashboard() {
                                                         </button>
                                                         {booking.rawStatus === 'Confirmed' && (
                                                             <button className="btn btn-primary btn-sm" onClick={() => handleStartBooking(booking.id)}>
-                                                                <CheckCircle size={14} /> Xác nhận bắt đầu
+                                                                <CheckCircle size={14} /> Xác nhận đã hoàn tất 
                                                             </button>
                                                         )}
                                                         {booking.status === 'completed' && (
