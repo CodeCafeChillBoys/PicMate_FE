@@ -35,6 +35,8 @@ export const apiClient = {
   addService: (data) => http.post('/api/graphers/me/services', data).then(res => res.data),
   updateService: (id, data) => http.put(`/api/graphers/me/services/${id}`, data).then(res => res.data),
   deleteService: (id) => http.delete(`/api/graphers/me/services/${id}`).then(res => res.data),
+  updateGrapherProfile: (data) => http.put('/api/graphers/me', data).then(res => res.data),
+  toggleFavorite: (grapherId) => http.post(`/api/graphers/${grapherId}/favorite`).then(res => res.data),
   uploadImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);

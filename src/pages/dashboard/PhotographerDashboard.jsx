@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
     Camera, DollarSign, TrendingUp, Clock, Package, Users, Settings, LogOut,
     Eye, ToggleLeft, ToggleRight, Star, MapPin, Calendar, CheckCircle, Zap, Image,
-    XCircle, MessageCircle, Upload, Heart, Trash2, Filter, Plus, Maximize2, Edit, CreditCard, AlertTriangle
+    XCircle, MessageCircle, Upload, Heart, Trash2, Filter, Plus, Maximize2, Edit, CreditCard, AlertTriangle,
+    Save, Phone, User, Palette, MapPinned, Tag, X
 } from 'lucide-react';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -55,6 +56,18 @@ export default function PhotographerDashboard() {
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [profileForm, setProfileForm] = useState({ fullName: '', avatarUrl: '' });
     const [isProfileUpdating, setIsProfileUpdating] = useState(false);
+
+    // Settings State
+    const [settingsPersonal, setSettingsPersonal] = useState({ fullName: '', phoneNumber: '', bio: '', avatarUrl: '' });
+    const [settingsStyles, setSettingsStyles] = useState([]);
+    const [newStyleInput, setNewStyleInput] = useState('');
+    const [settingsAreas, setSettingsAreas] = useState([]);
+    const [newAreaCity, setNewAreaCity] = useState('');
+    const [newAreaDistrict, setNewAreaDistrict] = useState('');
+    const [isSavingPersonal, setIsSavingPersonal] = useState(false);
+    const [isSavingStyles, setIsSavingStyles] = useState(false);
+    const [isSavingAreas, setIsSavingAreas] = useState(false);
+    const [settingsAvatarUploading, setSettingsAvatarUploading] = useState(false);
 
     // Map backend BookingStatus enum names to UI status keys
     const mapStatus = (s) => {
@@ -121,6 +134,15 @@ export default function PhotographerDashboard() {
                 setGrapherProfile(profile);
                 setPortfolio(profile.portfolio || []);
                 setIsOnline(!!profile.isOnline);
+                // Sync settings state
+                setSettingsPersonal({
+                    fullName: profile.name || user?.name || '',
+                    phoneNumber: profile.phoneNumber || '',
+                    bio: profile.bio || '',
+                    avatarUrl: profile.avatar || user?.avatar || ''
+                });
+                setSettingsStyles(profile.styles || []);
+                setSettingsAreas(profile.activityAreas || []);
             } catch (err) {
                 console.error('Failed to fetch grapher profile:', err);
             }
@@ -880,11 +902,251 @@ export default function PhotographerDashboard() {
 
                         {/* ===== SETTINGS ===== */}
                         {activeTab === 'settings' && (
-                            <div className="dashboard-placeholder">
-                                <Settings size={48} />
-                                <h3>Cài đặt</h3>
-                                <p>Cập nhật giá, khu vực hoạt động, và thông tin cá nhân.</p>
-                            </div>
+                            <>
+                                <div className="dashboard-content-header">
+                                    <h2><Settings size={22} /> Cài đặt</h2>
+                                    <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Cập nhật giá, khu vực hoạt động, thông tin cá nhân và phong cách chụp</p>
+                                </div>
+
+                                <div className="settings-grid">
+                                    {/* ── Personal Info Card ── */}
+                                    <div className="settings-card card-glass" style={{ animationDelay: '0s' }}>
+                                        <div className="settings-card-header">
+                                            <div className="settings-card-icon" style={{ background: 'rgba(108, 92, 231, 0.12)', color: 'var(--primary)' }}><User size={20} /></div>
+                                            <h3>Thông tin cá nhân</h3>
+                                        </div>
+                                        <div className="settings-card-body">
+                                            <div className="settings-avatar-section">
+                                                <div className="settings-avatar">
+                                                    <img src={settingsPersonal.avatarUrl || avatarFallback(settingsPersonal.fullName)} alt="Avatar" />
+                                                    <label className="settings-avatar-overlay" htmlFor="settings-avatar-upload">
+                                                        {settingsAvatarUploading ? <span className="settings-spinner" /> : <Camera size={18} />}
+                                                    </label>
+                                                    <input type="file" id="settings-avatar-upload" accept="image/*" hidden onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        try {
+                                                            setSettingsAvatarUploading(true);
+                                                            const url = await apiClient.uploadImage(file);
+                                                            setSettingsPersonal(p => ({ ...p, avatarUrl: url }));
+                                                            toast.success('Tải ảnh thành công!');
+                                                        } catch (err) {
+                                                            toast.error('Lỗi tải ảnh: ' + (err.message || 'Vui lòng thử lại'));
+                                                        } finally {
+                                                            setSettingsAvatarUploading(false);
+                                                            e.target.value = null;
+                                                        }
+                                                    }} />
+                                                </div>
+                                            </div>
+                                            <div className="settings-form">
+                                                <div className="input-group">
+                                                    <label><User size={14} /> Họ và tên</label>
+                                                    <input className="input" value={settingsPersonal.fullName} onChange={e => setSettingsPersonal(p => ({ ...p, fullName: e.target.value }))} placeholder="Nhập họ và tên" />
+                                                </div>
+                                                <div className="input-group">
+                                                    <label><Phone size={14} /> Số điện thoại</label>
+                                                    <input className="input" value={settingsPersonal.phoneNumber} onChange={e => setSettingsPersonal(p => ({ ...p, phoneNumber: e.target.value }))} placeholder="0901 234 567" />
+                                                </div>
+                                                <div className="input-group">
+                                                    <label><Edit size={14} /> Tiểu sử</label>
+                                                    <textarea className="input settings-textarea" value={settingsPersonal.bio} onChange={e => setSettingsPersonal(p => ({ ...p, bio: e.target.value }))} placeholder="Giới thiệu về bản thân và phong cách chụp ảnh của bạn..." rows={4} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="settings-card-footer">
+                                            <button className="btn btn-primary" disabled={isSavingPersonal} onClick={async () => {
+                                                try {
+                                                    setIsSavingPersonal(true);
+                                                    // Update user info (name, avatar, phone)
+                                                    const userRes = await apiClient.updateProfile({
+                                                        fullName: settingsPersonal.fullName,
+                                                        avatarUrl: settingsPersonal.avatarUrl,
+                                                        phoneNumber: settingsPersonal.phoneNumber
+                                                    });
+                                                    updateUser({ name: userRes.fullName, avatar: userRes.avatarUrl });
+                                                    // Update grapher profile (bio)
+                                                    await apiClient.updateGrapherProfile({
+                                                        bio: settingsPersonal.bio,
+                                                        location: grapherProfile?.location || '',
+                                                        styles: settingsStyles,
+                                                        portfolio: portfolio,
+                                                        servicePackages: services.map(s => ({ id: s.id, name: s.name, description: s.description, price: s.price, durationMinutes: s.durationMinutes }))
+                                                    });
+                                                    const profile = await apiClient.getMyGrapherProfile();
+                                                    setGrapherProfile(profile);
+                                                    toast.success('Cập nhật thông tin thành công!');
+                                                } catch (err) {
+                                                    toast.error('Lỗi: ' + (err.response?.data?.Error || err.message));
+                                                } finally {
+                                                    setIsSavingPersonal(false);
+                                                }
+                                            }}>
+                                                {isSavingPersonal ? <span className="settings-spinner" /> : <Save size={16} />} Lưu thay đổi
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Photography Styles Card ── */}
+                                    <div className="settings-card card-glass" style={{ animationDelay: '0.1s' }}>
+                                        <div className="settings-card-header">
+                                            <div className="settings-card-icon" style={{ background: 'rgba(255, 107, 107, 0.12)', color: 'var(--coral)' }}><Palette size={20} /></div>
+                                            <h3>Phong cách chụp</h3>
+                                        </div>
+                                        <div className="settings-card-body">
+                                            <div className="settings-tags">
+                                                {settingsStyles.length === 0 && <p className="settings-empty-hint">Chưa có phong cách nào. Thêm bên dưới!</p>}
+                                                {settingsStyles.map((style, idx) => (
+                                                    <span key={idx} className="settings-tag">
+                                                        <Tag size={12} /> {style}
+                                                        <button className="settings-tag-remove" onClick={() => setSettingsStyles(settingsStyles.filter((_, i) => i !== idx))}><X size={14} /></button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div className="settings-tag-add">
+                                                <input className="input" value={newStyleInput} onChange={e => setNewStyleInput(e.target.value)} placeholder="VD: Vintage, Hàn Quốc, Street..." onKeyDown={e => {
+                                                    if (e.key === 'Enter' && newStyleInput.trim()) {
+                                                        if (!settingsStyles.some(s => s.toLowerCase() === newStyleInput.trim().toLowerCase())) {
+                                                            setSettingsStyles([...settingsStyles, newStyleInput.trim()]);
+                                                        }
+                                                        setNewStyleInput('');
+                                                    }
+                                                }} />
+                                                <button className="btn btn-secondary btn-sm" onClick={() => {
+                                                    if (newStyleInput.trim() && !settingsStyles.some(s => s.toLowerCase() === newStyleInput.trim().toLowerCase())) {
+                                                        setSettingsStyles([...settingsStyles, newStyleInput.trim()]);
+                                                    }
+                                                    setNewStyleInput('');
+                                                }}><Plus size={14} /> Thêm</button>
+                                            </div>
+                                            {data?.styles?.length > 0 && (
+                                                <div className="settings-suggestions">
+                                                    <span className="settings-suggestions-label">Gợi ý:</span>
+                                                    {(data.styles || []).filter(s => typeof s === 'object' ? !settingsStyles.includes(s.name) : !settingsStyles.includes(s)).slice(0, 8).map((s, i) => {
+                                                        const name = typeof s === 'object' ? s.name : s;
+                                                        return (
+                                                            <button key={i} className="settings-suggestion-btn" onClick={() => setSettingsStyles([...settingsStyles, name])}>
+                                                                + {name}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="settings-card-footer">
+                                            <button className="btn btn-primary" disabled={isSavingStyles} onClick={async () => {
+                                                try {
+                                                    setIsSavingStyles(true);
+                                                    await apiClient.updateGrapherProfile({
+                                                        bio: grapherProfile?.bio || '',
+                                                        location: grapherProfile?.location || '',
+                                                        styles: settingsStyles,
+                                                        portfolio: portfolio,
+                                                        servicePackages: services.map(s => ({ id: s.id, name: s.name, description: s.description, price: s.price, durationMinutes: s.durationMinutes }))
+                                                    });
+                                                    const profile = await apiClient.getMyGrapherProfile();
+                                                    setGrapherProfile(profile);
+                                                    setSettingsStyles(profile.styles || []);
+                                                    toast.success('Cập nhật phong cách thành công!');
+                                                } catch (err) {
+                                                    toast.error('Lỗi: ' + (err.response?.data?.Error || err.message));
+                                                } finally {
+                                                    setIsSavingStyles(false);
+                                                }
+                                            }}>
+                                                {isSavingStyles ? <span className="settings-spinner" /> : <Save size={16} />} Lưu phong cách
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Activity Areas Card ── */}
+                                    <div className="settings-card card-glass" style={{ animationDelay: '0.2s' }}>
+                                        <div className="settings-card-header">
+                                            <div className="settings-card-icon" style={{ background: 'rgba(0, 206, 201, 0.12)', color: 'var(--teal)' }}><MapPinned size={20} /></div>
+                                            <h3>Khu vực hoạt động</h3>
+                                        </div>
+                                        <div className="settings-card-body">
+                                            {settingsAreas.length === 0 && <p className="settings-empty-hint">Chưa có khu vực nào. Thêm để khách hàng dễ tìm thấy bạn!</p>}
+                                            <div className="settings-areas-list">
+                                                {settingsAreas.map((area, idx) => (
+                                                    <div key={area.id || idx} className="settings-area-item">
+                                                        <MapPin size={16} />
+                                                        <span className="settings-area-text">{area.city}{area.district ? ` — ${area.district}` : ''}</span>
+                                                        <button className="settings-area-remove" onClick={() => setSettingsAreas(settingsAreas.filter((_, i) => i !== idx))}><X size={14} /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="settings-area-add">
+                                                <input className="input" value={newAreaCity} onChange={e => setNewAreaCity(e.target.value)} placeholder="Thành phố (VD: TP.HCM)" />
+                                                <input className="input" value={newAreaDistrict} onChange={e => setNewAreaDistrict(e.target.value)} placeholder="Quận / Huyện (tuỳ chọn)" />
+                                                <button className="btn btn-secondary btn-sm" onClick={() => {
+                                                    if (newAreaCity.trim()) {
+                                                        setSettingsAreas([...settingsAreas, { city: newAreaCity.trim(), district: newAreaDistrict.trim() || null }]);
+                                                        setNewAreaCity('');
+                                                        setNewAreaDistrict('');
+                                                    }
+                                                }}><Plus size={14} /> Thêm khu vực</button>
+                                            </div>
+                                        </div>
+                                        <div className="settings-card-footer">
+                                            <button className="btn btn-primary" disabled={isSavingAreas} onClick={async () => {
+                                                try {
+                                                    setIsSavingAreas(true);
+                                                    await apiClient.updateGrapherProfile({
+                                                        bio: grapherProfile?.bio || '',
+                                                        location: grapherProfile?.location || '',
+                                                        styles: settingsStyles,
+                                                        portfolio: portfolio,
+                                                        servicePackages: services.map(s => ({ id: s.id, name: s.name, description: s.description, price: s.price, durationMinutes: s.durationMinutes })),
+                                                        activityAreas: settingsAreas.map(a => ({ city: a.city, district: a.district }))
+                                                    });
+                                                    const profile = await apiClient.getMyGrapherProfile();
+                                                    setGrapherProfile(profile);
+                                                    setSettingsAreas(profile.activityAreas || []);
+                                                    toast.success('Cập nhật khu vực thành công!');
+                                                } catch (err) {
+                                                    toast.error('Lỗi: ' + (err.response?.data?.Error || err.message));
+                                                } finally {
+                                                    setIsSavingAreas(false);
+                                                }
+                                            }}>
+                                                {isSavingAreas ? <span className="settings-spinner" /> : <Save size={16} />} Lưu khu vực
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* ── Service Pricing Card ── */}
+                                    <div className="settings-card card-glass" style={{ animationDelay: '0.3s' }}>
+                                        <div className="settings-card-header">
+                                            <div className="settings-card-icon" style={{ background: 'rgba(253, 203, 110, 0.15)', color: 'var(--gold)' }}><CreditCard size={20} /></div>
+                                            <h3>Giá dịch vụ</h3>
+                                        </div>
+                                        <div className="settings-card-body">
+                                            {services.length === 0 && <p className="settings-empty-hint">Chưa có gói dịch vụ. Vào tab Dịch vụ để thêm!</p>}
+                                            <div className="settings-services-list">
+                                                {services.map((svc) => (
+                                                    <div key={svc.id} className="settings-service-item">
+                                                        <div className="settings-service-info">
+                                                            <strong>{svc.name}</strong>
+                                                            <span className="settings-service-desc">{svc.description}</span>
+                                                        </div>
+                                                        <div className="settings-service-meta">
+                                                            <span className="settings-service-price">{formatPrice(svc.price)}</span>
+                                                            <span className="settings-service-duration"><Clock size={12} /> {svc.durationMinutes} phút</span>
+                                                        </div>
+                                                        <button className="btn btn-ghost btn-sm" onClick={() => { handleOpenEditService(svc); setActiveTab('services'); }}><Edit size={14} /></button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="settings-card-footer">
+                                            <button className="btn btn-secondary" onClick={() => setActiveTab('services')}>
+                                                <Package size={16} /> Quản lý dịch vụ chi tiết
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
                 </div>

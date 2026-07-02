@@ -16,7 +16,7 @@ import toast from 'react-hot-toast';
 import './CustomerDashboard.css';
 
 export default function CustomerDashboard() {
-    const { data } = useAppData();
+    const { data, toggleFavoriteId } = useAppData();
     const { user, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('overview');
     const [orderFilter, setOrderFilter] = useState('all');
@@ -555,9 +555,17 @@ export default function CustomerDashboard() {
                                 <div className="favorites-grid" id="favorites-grid">
                                     {favoritePhotographers.map(p => (
                                         <div key={p.id} className="favorite-card" id={`fav-${p.id}`}>
-                                            <div className="favorite-cover" style={{ backgroundImage: `url(${p.coverPhoto})` }}>
-                                                <button className="favorite-heart-btn active">
-                                                    <Heart size={18} fill="currentColor" />
+                                            <div className="favorite-cover" style={{ backgroundImage: `url(${p.coverPhoto || 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&h=400&fit=crop'})` }}>
+                                                <button className="favorite-heart-btn active" onClick={async () => {
+                                                    try {
+                                                        await apiClient.toggleFavorite(p.id);
+                                                        toggleFavoriteId(p.id);
+                                                        toast.success('Đã bỏ yêu thích');
+                                                    } catch (err) {
+                                                        toast.error('Lỗi: ' + (err.message || 'Vui lòng thử lại'));
+                                                    }
+                                                }}>
+                                                    <Heart size={18} fill="var(--accent-red)" color="var(--accent-red)" />
                                                 </button>
                                                 {p.isOnline && <span className="favorite-online">🟢 Online</span>}
                                             </div>

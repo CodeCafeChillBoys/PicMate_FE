@@ -5,9 +5,12 @@ import {
     Calendar, ChevronLeft, Heart, Share2, Shield, Zap, X, Award
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../services/apiClient';
 import { formatPrice } from '../data/data';
 import { API_BASE_URL } from '../services/http';
 import ChatComponent from '../components/chat/ChatComponent';
+import toast from 'react-hot-toast';
 import './PhotographerProfile.css';
 
 export default function PhotographerProfile() {
@@ -18,6 +21,25 @@ export default function PhotographerProfile() {
     const [activeTab, setActiveTab] = useState('portfolio');
     const [selectedImage, setSelectedImage] = useState(null);
     const [showChat, setShowChat] = useState(false);
+    const { data, toggleFavoriteId } = useAppData();
+    const { user } = useAuth();
+    
+    const favoriteIds = data.favoritePhotographerIds || [];
+    const isFavorited = favoriteIds.includes(id);
+
+    const handleToggleFavorite = async () => {
+        if (!user) {
+            toast.error('Vui lòng đăng nhập để yêu thích thợ chụp!');
+            return;
+        }
+        try {
+            await apiClient.toggleFavorite(id);
+            toggleFavoriteId(id);
+            toast.success(isFavorited ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích!');
+        } catch (err) {
+            toast.error('Lỗi: ' + (err.message || 'Vui lòng thử lại'));
+        }
+    };
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -93,7 +115,9 @@ export default function PhotographerProfile() {
                                 </div>
                             </div>
                             <div className="profile-actions-top">
-                                <button className="btn btn-icon btn-ghost" id="profile-like"><Heart size={20} /></button>
+                                <button className={`btn btn-icon btn-ghost ${isFavorited ? 'active' : ''}`} id="profile-like" onClick={handleToggleFavorite} title={isFavorited ? "Bỏ yêu thích" : "Yêu thích"}>
+                                    <Heart size={20} fill={isFavorited ? "var(--accent-red)" : "transparent"} color={isFavorited ? "var(--accent-red)" : "currentColor"} />
+                                </button>
                                 <button className="btn btn-icon btn-ghost" id="profile-share"><Share2 size={20} /></button>
                             </div>
                         </div>

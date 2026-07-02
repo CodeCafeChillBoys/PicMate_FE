@@ -270,3 +270,33 @@
         margin: 0 auto;
     }
 }
+
+/* Favorite Button */
+.photographer-favorite-btn {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    padding: 0;
+}
+
+.photographer-favorite-btn:hover {
+    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.photographer-favorite-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: transparent;
+}

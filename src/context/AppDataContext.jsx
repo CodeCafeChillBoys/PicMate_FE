@@ -61,7 +61,21 @@ export function AppDataProvider({ children }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ data, loading, error }), [data, loading, error]);
+  const toggleFavoriteId = (grapherId) => {
+    setData((prev) => {
+      const ids = prev.favoritePhotographerIds || [];
+      const exists = ids.includes(grapherId);
+      const nextIds = exists 
+        ? ids.filter(id => id !== grapherId)
+        : [...ids, grapherId];
+      return {
+        ...prev,
+        favoritePhotographerIds: nextIds
+      };
+    });
+  };
+
+  const value = useMemo(() => ({ data, loading, error, toggleFavoriteId }), [data, loading, error]);
 
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }

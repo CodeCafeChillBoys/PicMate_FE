@@ -1,21 +1,42 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Star, SlidersHorizontal, X, Zap, CheckCircle, Filter } from 'lucide-react';
+import { Search, MapPin, Star, SlidersHorizontal, X, Zap, CheckCircle, Filter, Heart } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
+import { apiClient } from '../services/apiClient';
 import { formatPrice } from '../data/data';
+import toast from 'react-hot-toast';
 import './ExplorePage.css';
 
 export default function ExplorePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStyles, setSelectedStyles] = useState([]);
     const [priceRange, setPriceRange] = useState('all');
-    const { data } = useAppData();
+    const { data, toggleFavoriteId } = useAppData();
+    const { user } = useAuth();
     
     const photographers = data.photographers || [];
     const styles = data.styles || [];
+    const favoriteIds = data.favoritePhotographerIds || [];
     const [sortBy, setSortBy] = useState('rating');
     const [showFilters, setShowFilters] = useState(false);
     const [instantOnly, setInstantOnly] = useState(false);
+
+    const handleToggleFavorite = async (e, grapherId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) {
+            toast.error('Vui lòng đăng nhập để yêu thích thợ chụp!');
+            return;
+        }
+        try {
+            await apiClient.toggleFavorite(grapherId);
+            toggleFavoriteId(grapherId);
+            toast.success(favoriteIds.includes(grapherId) ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích!');
+        } catch (err) {
+            toast.error('Lỗi: ' + (err.message || 'Vui lòng thử lại'));
+        }
+    };
 
     const toggleStyle = (name) => {
         setSelectedStyles(prev =>
@@ -152,6 +173,13 @@ export default function ExplorePage() {
                                             <div className="photographer-card-overlay">
                                                 <span className="btn btn-sm btn-primary">Xem hồ sơ</span>
                                             </div>
+                                            <button 
+                                                className={`photographer-favorite-btn ${favoriteIds.includes(p.id) ? 'active' : ''}`}
+                                                onClick={(e) => handleToggleFavorite(e, p.id)}
+                                                title="Yêu thích"
+                                            >
+                                                <Heart size={16} fill={favoriteIds.includes(p.id) ? "var(--accent-red)" : "transparent"} color={favoriteIds.includes(p.id) ? "var(--accent-red)" : "white"} />
+                                            </button>
                                             {p.isOnline && (
                                                 <span className="photographer-online-badge"><span className="online-pulse" /> Online</span>
                                             )}
