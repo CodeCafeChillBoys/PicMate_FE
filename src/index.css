@@ -2,26 +2,26 @@
 
 :root {
   /* Primary Colors */
-  --primary: #6C5CE7;
-  --primary-light: #a29bfe;
-  --primary-dark: #5241d0;
-  --primary-glow: rgba(108, 92, 231, 0.3);
+  --primary: #3B566B; /* Teal */
+  --primary-light: #5a7b93;
+  --primary-dark: #1f3747;
+  --primary-glow: rgba(59, 86, 107, 0.3);
 
   /* Accent Colors */
-  --accent-coral: #FF6B6B;
-  --accent-coral-light: #ff8787;
-  --accent-gold: #FDCB6E;
-  --accent-gold-light: #ffeaa7;
-  --accent-teal: #00cec9;
-  --accent-green: #00b894;
+  --accent-coral: #D6705B; /* Magenta/Coral */
+  --accent-coral-light: #e69282;
+  --accent-gold: #DEBC3B; /* Gold/Silver text */
+  --accent-gold-light: #f0d56b;
+  --accent-teal: #CABEDF; /* Lilac */
+  --accent-green: #6ab04c;
 
   /* Neutrals */
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9ff;
   --bg-tertiary: #f0f1f8;
-  --bg-dark: #0c0c1d;
-  --bg-dark-card: #1a1a2e;
-  --text-primary: #1a1a2e;
+  --bg-dark: #102a43; /* Dark Blue from image */
+  --bg-dark-card: #1f3e5c;
+  --text-primary: #102a43;
   --text-secondary: #5a5a7a;
   --text-muted: #9a9ab0;
   --text-white: #ffffff;
@@ -160,7 +160,7 @@ input, textarea, select {
 }
 
 .section {
-  padding: var(--space-4xl) 0;
+  padding: var(--space-2xl) 0;
 }
 
 .section-header {

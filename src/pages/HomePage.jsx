@@ -36,33 +36,44 @@ export default function HomePage() {
                     <div className="hero-text animate-fade-in-up">
                         <span className="hero-badge">
                             <Sparkles size={14} />
-                            #1 Phone-Grapher Platform in Vietnam
+                            #1 Phone Grapher Platform in Vietnam
                         </span>
                         <h1>
                             Biến khoảnh khắc thành <span className="gradient-text">tác phẩm nghệ thuật</span>
                         </h1>
                         <p className="hero-subtitle">
-                            Kết nối với hàng ngàn Phone-Grapher tài năng. Đặt lịch chụp ảnh, quay TikTok, edit ảnh chỉ trong vài giây.
+                            Kết nối với hàng ngàn Phone Grapher tài năng. Đặt lịch chụp ảnh, quay TikTok, edit ảnh chỉ trong vài giây.
                         </p>
-                        <div className="hero-search">
+                        <div className="hero-search" style={{ position: 'relative' }}>
                             <div className="hero-search-input">
                                 <Search size={20} />
                                 <input
                                     type="text"
-                                    placeholder="Tìm theo phong cách, địa điểm..."
+                                    placeholder="Tìm theo phong cách, tên, rating, địa điểm..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     id="hero-search-input"
+                                    onFocus={() => document.getElementById('search-suggestions')?.classList.add('show')}
+                                    onBlur={() => setTimeout(() => document.getElementById('search-suggestions')?.classList.remove('show'), 200)}
                                 />
                             </div>
                             <Link to={`/explore?q=${searchQuery}`} className="btn btn-primary btn-lg" id="hero-search-btn">
                                 Tìm thợ chụp
                             </Link>
+                            <div id="search-suggestions" className="search-suggestions-dropdown">
+                                <strong>Gợi ý tìm kiếm:</strong>
+                                <div className="suggestion-tags">
+                                    <span onClick={() => setSearchQuery('Hàn Quốc')}>Hàn Quốc</span>
+                                    <span onClick={() => setSearchQuery('Đà Lạt')}>Đà Lạt</span>
+                                    <span onClick={() => setSearchQuery('5 sao')}>5 sao</span>
+                                    <span onClick={() => setSearchQuery('Chân dung')}>Chân dung</span>
+                                </div>
+                            </div>
                         </div>
                         <div className="hero-stats">
                             <div className="hero-stat">
                                 <strong>2,500+</strong>
-                                <span>Phone-Graphers</span>
+                                <span>Phone Graphers</span>
                             </div>
                             <div className="hero-stat-divider" />
                             <div className="hero-stat">
@@ -103,7 +114,7 @@ export default function HomePage() {
                     </div>
                     <div className="steps-grid">
                         {[
-                            { icon: <Search size={32} />, title: "Tìm & Chọn", desc: "Tìm Phone-Grapher theo phong cách, địa điểm, giá. Xem portfolio và review thực tế.", color: "var(--primary)", link: "/explore" },
+                            { icon: <Search size={32} />, title: "Tìm & Chọn", desc: "Tìm Phone Grapher theo phong cách, địa điểm, giá. Xem portfolio và review thực tế.", color: "var(--primary)", link: "/explore" },
                             { icon: <CreditCard size={32} />, title: "Đặt lịch & Thanh toán", desc: "Chọn ngày giờ, dịch vụ. Thanh toán an toàn – tiền được PICMate đảm bảo cho đến khi hoàn thành.", color: "var(--accent-coral)", link: "/explore" },
                             { icon: <Camera size={32} />, title: "Chụp & Nhận ảnh", desc: "Gặp thợ, chụp ảnh / quay content. Nhận ảnh đẹp lung linh và bấm \"Hoàn thành\"!", color: "var(--accent-green)", link: "/customer-dashboard" },
                         ].map((step, i) => (
@@ -129,7 +140,7 @@ export default function HomePage() {
                         <p>Được yêu thích và đánh giá cao nhất bởi cộng đồng PICMate.</p>
                     </div>
                     <div className="featured-grid">
-                        {photographers.slice(0, 4).map((p, i) => (
+                        {photographers.slice(0, 8).map((p, i) => (
                             <Link to={`/photographer/${p.id}`} key={p.id} className="photographer-card" id={`photographer-card-${p.id}`} style={{ animationDelay: `${i * 0.1}s` }}>
                                 <div className="photographer-card-img">
                                     <img src={p.portfolio?.[0] || p.avatar || ''} alt={p.name} />
@@ -139,11 +150,6 @@ export default function HomePage() {
                                     {p.isOnline && (
                                         <span className="photographer-online-badge">
                                             <span className="online-pulse" /> Online
-                                        </span>
-                                    )}
-                                    {p.isVerified && (
-                                        <span className="photographer-verified-badge">
-                                            <CheckCircle size={14} /> Verified
                                         </span>
                                     )}
                                 </div>
@@ -178,7 +184,7 @@ export default function HomePage() {
                     </div>
                     <div className="section-cta">
                         <Link to="/explore" className="btn btn-secondary btn-lg" id="view-all-photographers">
-                            Xem tất cả Phone-Graphers <ArrowRight size={18} />
+                            Xem tất cả Phone Graphers <ArrowRight size={18} />
                         </Link>
                     </div>
                 </div>
@@ -190,7 +196,7 @@ export default function HomePage() {
                     <div className="section-header">
                         <span className="section-label">Phong cách</span>
                         <h2>Chọn phong cách <span className="gradient-text">yêu thích</span></h2>
-                        <p>Từ Hàn Quốc minimal đến vintage cá tính – tìm Phone-Grapher phù hợp với gu của bạn.</p>
+                        <p>Từ Hàn Quốc minimal đến vintage cá tính – tìm Phone Grapher phù hợp với gu của bạn.</p>
                     </div>
                     <div className="styles-grid">
                         {styles.map((style, i) => (
@@ -389,10 +395,10 @@ export default function HomePage() {
                         <p>Tham gia PICMate ngay hôm nay – hoàn toàn miễn phí.</p>
                         <div className="final-cta-buttons">
                             <Link to="/explore" className="btn btn-primary btn-lg" id="final-cta-explore">
-                                <Camera size={18} /> Tìm Phone-Grapher
+                                <Camera size={18} /> Tìm Phone Grapher
                             </Link>
                             <Link to="/auth?role=photographer" className="btn btn-secondary btn-lg" id="final-cta-register">
-                                Trở thành Phone-Grapher
+                                Trở thành Phone Grapher
                             </Link>
                         </div>
                     </div>

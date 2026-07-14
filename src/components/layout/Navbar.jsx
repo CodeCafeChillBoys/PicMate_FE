@@ -58,7 +58,7 @@ export default function Navbar() {
                 return [
                     { path: '/admin-dashboard', label: '🏠 Tổng quan' },
                     { path: '/admin-dashboard', label: '👥 Người dùng' },
-                    { path: '/admin-dashboard', label: '📸 Phone-Graphers' },
+                    { path: '/admin-dashboard', label: '📸 Phone Graphers' },
                     { path: '/admin-dashboard', label: '📦 Đơn hàng' },
                 ];
             default: // customer
@@ -91,7 +91,7 @@ export default function Navbar() {
         if (!user) return '';
         switch (user.role) {
             case 'customer': return 'Khách hàng';
-            case 'photographer': return 'Phone-Grapher';
+            case 'photographer': return 'Phone Grapher';
             case 'admin': return 'Administrator';
             default: return '';
         }
@@ -103,8 +103,8 @@ export default function Navbar() {
         <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`} id="main-nav">
             <div className="navbar-container container">
                 <Link to="/" className="navbar-logo" id="nav-logo">
-                    <Camera size={28} strokeWidth={2.5} />
-                    <span>PIC<strong>Mate</strong></span>
+                    <img src="/Logo.jpg" alt="PIC PLS Logo" style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} />
+                    <span>PIC <strong>PLS</strong></span>
                 </Link>
 
                 {!hideNavLinks && (
@@ -113,7 +113,7 @@ export default function Navbar() {
                             <Link
                                 key={`${link.path}-${idx}`}
                                 to={link.path}
-                                className={`navbar-link ${location.pathname === link.path ? 'active' : ''}`}
+                                className={`navbar-link ${location.pathname === link.path ? 'active' : ''} ${link.path === '/instant' ? 'nav-instant-highlight' : ''}`}
                                 id={`nav-link-${link.label.replace(/[^a-zA-Z]/g, '').toLowerCase() || 'home'}`}
                             >
                                 {link.label}
@@ -136,7 +136,7 @@ export default function Navbar() {
                                         Đăng nhập
                                     </Link>
                                     <Link to="/auth?role=photographer" className="btn btn-secondary btn-sm" id="nav-register-mobile">
-                                        Trở thành Phone-Grapher
+                                        Trở thành Phone Grapher
                                     </Link>
                                 </>
                             )}
@@ -189,7 +189,7 @@ export default function Navbar() {
                                 Đăng nhập
                             </Link>
                             <Link to="/auth?role=photographer" className="btn btn-primary btn-sm" id="nav-register">
-                                Trở thành Phone-Grapher
+                                Trở thành Phone Grapher
                             </Link>
                         </>
                     )}

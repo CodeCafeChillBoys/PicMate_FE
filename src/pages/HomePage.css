@@ -18,15 +18,17 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(135deg,
-            rgba(108, 92, 231, 0.06) 0%,
-            rgba(255, 107, 107, 0.04) 50%,
-            rgba(253, 203, 110, 0.03) 100%);
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 60%,
+            rgba(12, 12, 29, 0.1) 100%),
+            url('/Background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .hero-circles {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
+    display: none;
 }
 
 .hero-circle {
@@ -80,12 +82,14 @@
     align-items: center;
     gap: 6px;
     padding: 0.4rem 1rem;
-    background: rgba(108, 92, 231, 0.08);
-    color: var(--primary);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--primary-dark);
     font-size: 0.85rem;
     font-weight: 600;
     border-radius: var(--radius-full);
     margin-bottom: var(--space-lg);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 
 .hero-text h1 {
@@ -94,11 +98,12 @@
     line-height: 1.15;
     margin-bottom: var(--space-lg);
     letter-spacing: -0.5px;
+    color: #ffffff;
 }
 
 .hero-subtitle {
     font-size: 1.15rem;
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.9);
     max-width: 520px;
     margin-bottom: var(--space-xl);
     line-height: 1.8;
@@ -137,6 +142,57 @@
     color: var(--text-primary);
 }
 
+.search-suggestions-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-md);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-fast);
+    z-index: 10;
+}
+
+.search-suggestions-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.search-suggestions-dropdown strong {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-sm);
+}
+
+.suggestion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.suggestion-tags span {
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    color: var(--primary);
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.suggestion-tags span:hover {
+    background: var(--primary);
+    color: var(--text-white);
+}
+
 .hero-stats {
     display: flex;
     align-items: center;
@@ -152,18 +208,18 @@
     font-family: var(--font-heading);
     font-size: 1.4rem;
     font-weight: 800;
-    color: var(--text-primary);
+    color: #ffffff;
 }
 
 .hero-stat span {
     font-size: 0.85rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .hero-stat-divider {
     width: 1px;
     height: 40px;
-    background: var(--border-color);
+    background: rgba(255, 255, 255, 0.25);
 }
 
 /* Hero Visual */
@@ -208,7 +264,7 @@
 
 .hero-card-info strong {
     font-size: 0.95rem;
-    color: var(--text-primary);
+    color: #1a1a2e; /* Fix to dark color on white glass card */
 }
 
 .hero-card-info span {
@@ -216,7 +272,7 @@
     align-items: center;
     gap: 4px;
     font-size: 0.8rem;
-    color: var(--accent-gold);
+    color: #f39c12; /* Golden color */
     font-weight: 600;
 }
 
@@ -265,7 +321,7 @@
 
 .steps-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: var(--space-xl);
 }
 
@@ -319,7 +375,7 @@
 /* ===== FEATURED PHOTOGRAPHERS ===== */
 .featured-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--space-lg);
 }
 
@@ -483,7 +539,7 @@
 
 .styles-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--space-lg);
 }
 
@@ -670,7 +726,7 @@
 /* ===== PRESET SHOP ===== */
 .preset-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: var(--space-lg);
 }
 
@@ -774,7 +830,7 @@
 
 .testimonials-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: var(--space-lg);
 }
 

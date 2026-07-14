@@ -96,9 +96,6 @@ export default function PhotographerProfile() {
                                 <div className="profile-info">
                                     <div className="profile-name-row">
                                         <h1>{photographer.name}</h1>
-                                        {photographer.isVerified && (
-                                            <span className="badge badge-info"><CheckCircle size={14} /> Verified</span>
-                                        )}
                                         {photographer.isOnline && (
                                             <span className="badge badge-success"><span className="online-pulse" /> Online</span>
                                         )}

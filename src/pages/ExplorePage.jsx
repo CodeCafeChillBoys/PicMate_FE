@@ -66,7 +66,7 @@ export default function ExplorePage() {
             {/* Search Header */}
             <div className="explore-header">
                 <div className="container">
-                    <h1>Tìm <span className="gradient-text">Phone-Grapher</span></h1>
+                    <h1>Tìm <span className="gradient-text">Phone Grapher</span></h1>
                     <p>Khám phá hàng ngàn thợ chụp tài năng phù hợp với phong cách của bạn</p>
                     <div className="explore-search-bar">
                         <Search size={20} />
@@ -162,7 +162,7 @@ export default function ExplorePage() {
                     {/* Results */}
                     <div className="explore-results">
                         <div className="explore-results-header">
-                            <span className="explore-count">{filtered.length} Phone-Graphers</span>
+                            <span className="explore-count">{filtered.length} Phone Graphers</span>
                         </div>
                         {filtered.length > 0 ? (
                             <div className="explore-grid">
@@ -182,9 +182,6 @@ export default function ExplorePage() {
                                             </button>
                                             {p.isOnline && (
                                                 <span className="photographer-online-badge"><span className="online-pulse" /> Online</span>
-                                            )}
-                                            {p.isVerified && (
-                                                <span className="photographer-verified-badge"><CheckCircle size={14} /> Verified</span>
                                             )}
                                         </div>
                                         <div className="photographer-card-body">
@@ -215,7 +212,7 @@ export default function ExplorePage() {
                         ) : (
                             <div className="explore-empty">
                                 <Search size={48} />
-                                <h3>Không tìm thấy Phone-Grapher</h3>
+                                <h3>Không tìm thấy Phone Grapher</h3>
                                 <p>Thử thay đổi bộ lọc hoặc tìm kiếm khác.</p>
                             </div>
                         )}

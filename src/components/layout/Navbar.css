@@ -71,6 +71,18 @@
     font-weight: 600;
 }
 
+.nav-instant-highlight {
+    color: var(--accent-coral);
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(214, 112, 91, 0.4);
+    animation: pulse 2s infinite;
+}
+
+.nav-instant-highlight:hover {
+    background: rgba(214, 112, 91, 0.1);
+    color: var(--accent-coral);
+}
+
 .navbar-actions {
     display: flex;
     align-items: center;
