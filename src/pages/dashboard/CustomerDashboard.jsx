@@ -503,14 +503,14 @@ export default function CustomerDashboard() {
                                                                 <CheckCircle size={14} /> Xác nhận đã hoàn tất 
                                                             </button>
                                                         )}
-                                                        {booking.status === 'completed' && (
+                                                        {(booking.status === 'completed' || booking.rawStatus === 'Completed') && (
                                                             booking.hasReview ? (
                                                                 <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                                                     <Star size={12} fill="currentColor" /> Đã đánh giá
                                                                 </span>
                                                             ) : (
-                                                                <button className="btn btn-ghost btn-sm" id={`review-${booking.id}`} onClick={() => handleOpenReview(booking)}>
-                                                                    <Star size={14} /> Đánh giá
+                                                                <button className="btn btn-primary btn-sm" id={`review-${booking.id}`} onClick={() => handleOpenReview(booking)} style={{ backgroundColor: 'var(--accent-gold)', borderColor: 'var(--accent-gold)', color: '#fff', fontWeight: 600 }}>
+                                                                    <Star size={14} fill="currentColor" /> Viết đánh giá
                                                                 </button>
                                                             )
                                                         )}
@@ -758,8 +758,8 @@ export default function CustomerDashboard() {
                                         </div>
                                         <div className="setting-item">
                                             <div className="setting-info">
-                                                <strong>Khuyến mãi</strong>
-                                                <span>Nhận thông báo về ưu đãi và khuyến mãi đặc biệt</span>
+                                                <strong>Khuyến mãi & Tin tức</strong>
+                                                <span>Nhận các ưu đãi đặc biệt từ PICMate</span>
                                             </div>
                                             <button
                                                 className={`toggle-switch ${notifPromo ? 'active' : ''}`}
@@ -770,60 +770,24 @@ export default function CustomerDashboard() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="settings-section">
-                                    <h3><Lock size={18} /> Bảo mật</h3>
+                                    <h3 style={{ marginTop: '2rem' }}><Lock size={18} /> Bảo mật</h3>
                                     <div className="settings-group">
                                         <div className="setting-item">
                                             <div className="setting-info">
-                                                <strong>Đổi mật khẩu</strong>
-                                                <span>Cập nhật mật khẩu để bảo vệ tài khoản</span>
+                                                <strong>Mật khẩu</strong>
+                                                <span>Đổi mật khẩu tài khoản</span>
                                             </div>
-                                            <button className="btn btn-ghost btn-sm" id="change-password">
-                                                Thay đổi <ChevronRight size={14} />
-                                            </button>
+                                            <button className="btn btn-secondary btn-sm" id="btn-change-pass">Đổi mật khẩu</button>
                                         </div>
                                         <div className="setting-item">
                                             <div className="setting-info">
-                                                <strong>Xác thực 2 bước</strong>
-                                                <span>Bảo vệ tài khoản bằng mã OTP qua SMS</span>
+                                                <strong>Xác thực 2 yếu tố (2FA)</strong>
+                                                <span>Tăng cường bảo mật cho tài khoản của bạn</span>
                                             </div>
-                                            <span className="badge badge-success">Đã bật</span>
-                                        </div>
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>Phiên đăng nhập</strong>
-                                                <span>Quản lý các thiết bị đang đăng nhập</span>
-                                            </div>
-                                            <button className="btn btn-ghost btn-sm" id="manage-sessions">
-                                                Quản lý <ChevronRight size={14} />
-                                            </button>
+                                            <button className="btn btn-secondary btn-sm" id="btn-enable-2fa">Kích hoạt</button>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="settings-section">
-                                    <h3><Shield size={18} /> Quyền riêng tư</h3>
-                                    <div className="settings-group">
-                                        <div className="setting-item">
-                                            <div className="setting-info">
-                                                <strong>Hiển thị hồ sơ công khai</strong>
-                                                <span>Cho phép Phone-Grapher xem thông tin của bạn</span>
-                                            </div>
-                                            <button className="toggle-switch active" id="toggle-public-profile">
-                                                <span className="toggle-knob" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="settings-danger-zone">
-                                    <h3>⚠️ Vùng nguy hiểm</h3>
-                                    <p>Xóa tài khoản sẽ xóa tất cả dữ liệu của bạn. Hành động này không thể hoàn tác.</p>
-                                    <button className="btn btn-ghost btn-sm danger-btn" id="delete-account">
-                                        Xóa tài khoản
-                                    </button>
                                 </div>
                             </>
                         )}
@@ -844,39 +808,27 @@ export default function CustomerDashboard() {
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowOrderDetail(false); }}>
                     <div className="modal-content">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ margin: 0 }}>Chi tiết đơn hàng {selectedOrder.id.split('-')[0]}</h3>
+                            <h3 style={{ margin: 0 }}>Chi tiết đơn hàng #{selectedOrder.id?.slice(0, 8)}</h3>
                             <button className="btn btn-icon btn-ghost" onClick={() => setShowOrderDetail(false)}><X size={20} /></button>
                         </div>
-                        
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Thợ chụp:</span>
-                                <strong>{selectedOrder.grapherName}</strong>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
+                                <img src={selectedOrder.photographerAvatar || avatarFallback(selectedOrder.photographerName)} alt="Photographer" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(selectedOrder.photographerName); }} />
+                                <div>
+                                    <h4 style={{ margin: 0 }}>{selectedOrder.photographerName}</h4>
+                                    <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)' }}>{selectedOrder.service}</p>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Khách hàng:</span>
-                                <strong>{selectedOrder.customerName}</strong>
+                                <span>Ngày chụp:</span>
+                                <strong>{selectedOrder.date} - {selectedOrder.time}</strong>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Dịch vụ:</span>
-                                <strong>{selectedOrder.serviceName}</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Thời gian:</span>
-                                <strong>{new Date(selectedOrder.scheduledAt).toLocaleString('vi-VN')} ({selectedOrder.durationMinutes} phút)</strong>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Địa điểm:</span>
+                                <span>Địa điểm:</span>
                                 <strong>{selectedOrder.location}</strong>
                             </div>
-                            {selectedOrder.note && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', gap: '0.5rem' }}>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Ghi chú:</span>
-                                    <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-body)', borderRadius: '8px' }}>{selectedOrder.note}</div>
-                                </div>
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-                                <span style={{ color: 'var(--text-secondary)' }}>Trạng thái:</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Trạng thái:</span>
                                 {getStatusBadge(selectedOrder.status)}
                             </div>
                             {selectedOrder.status === 'Cancelled' && selectedOrder.cancellationReason && (
@@ -889,6 +841,20 @@ export default function CustomerDashboard() {
                                 <strong>Tổng tiền:</strong>
                                 <strong style={{ color: 'var(--primary)' }}>{formatPrice(selectedOrder.totalAmount)}</strong>
                             </div>
+
+                            {(selectedOrder.status === 'completed' || selectedOrder.rawStatus === 'Completed') && (
+                                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)', textAlign: 'right' }}>
+                                    {selectedOrder.hasReview ? (
+                                        <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                                            <Star size={14} fill="currentColor" /> Đã đánh giá đơn này
+                                        </span>
+                                    ) : (
+                                        <button className="btn btn-primary" style={{ backgroundColor: 'var(--accent-gold)', borderColor: 'var(--accent-gold)', color: '#fff', fontWeight: 600 }} onClick={() => { setShowOrderDetail(false); handleOpenReview(selectedOrder); }}>
+                                            <Star size={16} fill="currentColor" /> Viết đánh giá ngay
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -924,32 +890,50 @@ export default function CustomerDashboard() {
             {/* Review Modal */}
             {showReviewModal && reviewOrder && (
                 <div className="lightbox" onClick={(e) => { if (e.target.className === 'lightbox') setShowReviewModal(false); }}>
-                    <div className="modal-content" style={{ maxWidth: '420px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <div className="modal-content" style={{ maxWidth: '440px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ margin: 0 }}>Đánh giá buổi chụp</h3>
                             <button className="btn btn-icon btn-ghost" onClick={() => setShowReviewModal(false)}><X size={20} /></button>
                         </div>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-                            Thợ: <strong>{reviewOrder.photographerName}</strong> · {reviewOrder.service}
-                        </p>
-                        <div className="review-stars">
-                            {[1, 2, 3, 4, 5].map(s => (
-                                <button key={s} type="button" className="review-star" onClick={() => setReviewRating(s)} aria-label={`${s} sao`}>
-                                    <Star size={32} fill={s <= reviewRating ? 'var(--accent-gold)' : 'none'} color="var(--accent-gold)" />
-                                </button>
-                            ))}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', marginBottom: '1.25rem' }}>
+                            <img src={reviewOrder.photographerAvatar || avatarFallback(reviewOrder.photographerName)} alt={reviewOrder.photographerName} className="avatar" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(reviewOrder.photographerName); }} />
+                            <div>
+                                <strong style={{ display: 'block', fontSize: '0.95rem' }}>{reviewOrder.photographerName}</strong>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{reviewOrder.service} · {reviewOrder.date}</span>
+                            </div>
                         </div>
-                        <div className="input-group" style={{ marginTop: '1rem' }}>
-                            <label>Nhận xét (không bắt buộc)</label>
+
+                        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Chọn số sao đánh giá</label>
+                            <div className="review-stars">
+                                {[1, 2, 3, 4, 5].map(s => (
+                                    <button key={s} type="button" className="review-star" onClick={() => setReviewRating(s)} aria-label={`${s} sao`}>
+                                        <Star size={36} fill={s <= reviewRating ? 'var(--accent-gold)' : 'transparent'} color={s <= reviewRating ? 'var(--accent-gold)' : 'var(--border)'} />
+                                    </button>
+                                ))}
+                            </div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--accent-gold)', minHeight: '24px', marginTop: '0.25rem' }}>
+                                {reviewRating === 1 && '😞 Rất không hài lòng (1/5)'}
+                                {reviewRating === 2 && '🙁 Không hài lòng (2/5)'}
+                                {reviewRating === 3 && '😐 Bình thường (3/5)'}
+                                {reviewRating === 4 && '🙂 Hài lòng (4/5)'}
+                                {reviewRating === 5 && '😄 Rất tuyệt vời! (5/5)'}
+                            </div>
+                        </div>
+
+                        <div className="input-group">
+                            <label style={{ fontWeight: 600 }}>Nhận xét / Đánh giá chi tiết</label>
                             <textarea
                                 className="input"
                                 rows={4}
-                                placeholder="Chia sẻ cảm nhận của bạn về buổi chụp..."
+                                placeholder="Chia sẻ cảm nhận của bạn về chất lượng ảnh, thái độ phục vụ..."
                                 value={reviewComment}
                                 onChange={(e) => setReviewComment(e.target.value)}
                                 disabled={isSubmittingReview}
                             />
                         </div>
+
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                             <button className="btn btn-ghost" onClick={() => setShowReviewModal(false)} disabled={isSubmittingReview}>Hủy</button>
                             <button className="btn btn-primary" onClick={handleSubmitReview} disabled={isSubmittingReview || reviewRating < 1}>
