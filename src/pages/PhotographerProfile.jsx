@@ -101,8 +101,19 @@ export default function PhotographerProfile() {
                                         )}
                                     </div>
                                     <div className="profile-meta">
-                                        <span><MapPin size={16} /> {photographer.location}</span>
-                                        <span><Star size={16} fill="var(--accent-gold)" color="var(--accent-gold)" /> {photographer.rating} ({photographer.reviewCount} đánh giá)</span>
+                                        {photographer.location ? (
+                                            <span><MapPin size={16} /> {photographer.location}</span>
+                                        ) : (
+                                            <span><MapPin size={16} /> Chưa cập nhật vị trí</span>
+                                        )}
+                                        <span>
+                                            <Star size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />{' '}
+                                            {photographer.reviewCount > 0 ? (
+                                                `${Number(photographer.rating || 0).toFixed(1)} (${photographer.reviewCount} đánh giá)`
+                                            ) : (
+                                                'Chưa có đánh giá'
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="profile-tags">
                                         {(photographer.styles || []).map(s => (
@@ -128,7 +139,7 @@ export default function PhotographerProfile() {
                         <div className="profile-tabs">
                             {[
                                 { key: 'portfolio', label: 'Portfolio', icon: <Camera size={16} /> },
-                                { key: 'reviews', label: `Đánh giá (${photographer.reviews?.length || 0})`, icon: <Star size={16} /> },
+                                { key: 'reviews', label: `Đánh giá (${photographer.reviewCount || photographer.reviews?.length || 0})`, icon: <Star size={16} /> },
                             ].map(tab => (
                                 <button
                                     key={tab.key}
