@@ -159,7 +159,7 @@ export default function HomePage() {
                                         <div>
                                             <h4>{p.name}</h4>
                                             <span className="photographer-card-location">
-                                                <MapPin size={14} /> {p.location}
+                                                <MapPin size={14} /> {p.location || 'Chưa cập nhật'}
                                             </span>
                                         </div>
                                     </div>
@@ -171,8 +171,14 @@ export default function HomePage() {
                                     <div className="photographer-card-footer">
                                         <span className="photographer-card-rating">
                                             <Star size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />
-                                            <strong>{p.rating}</strong>
-                                            <span>({p.reviewCount})</span>
+                                            {p.reviewCount > 0 ? (
+                                                <>
+                                                    <strong>{Number(p.rating || 0).toFixed(1)}</strong>
+                                                    <span>({p.reviewCount})</span>
+                                                </>
+                                            ) : (
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mới</span>
+                                            )}
                                         </span>
                                         <span className="photographer-card-price">
                                             từ <strong>{formatPrice(p.pricing.hourly)}</strong>/giờ
