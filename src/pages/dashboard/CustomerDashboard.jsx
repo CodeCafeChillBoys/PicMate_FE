@@ -196,6 +196,16 @@ export default function CustomerDashboard() {
         }
     };
 
+    const handleCompleteBooking = async (id) => {
+        try {
+            await apiClient.completeBooking(id);
+            setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'completed', rawStatus: 'Completed' } : o));
+            toast.success('Đã xác nhận hoàn tất buổi chụp!');
+        } catch (err) {
+            toast.error('Lỗi khi hoàn tất đơn: ' + (err.message || 'Vui lòng thử lại'));
+        }
+    };
+
     const handleOpenReview = (order) => {
         setReviewOrder(order);
         setReviewRating(5);
@@ -498,11 +508,11 @@ export default function CustomerDashboard() {
                                                         }}>
                                                             <MessageCircle size={14} /> Liên hệ
                                                         </button>
-                                                        {booking.rawStatus === 'Confirmed' && (
-                                                            <button className="btn btn-primary btn-sm" onClick={() => handleStartBooking(booking.id)}>
-                                                                <CheckCircle size={14} /> Xác nhận đã hoàn tất 
-                                                            </button>
-                                                        )}
+                                                        {(booking.status === 'confirmed' || booking.rawStatus === 'Confirmed' || booking.rawStatus === 'InProgress') && (
+                                                             <button className="btn btn-primary btn-sm" onClick={() => handleCompleteBooking(booking.id)} style={{ backgroundColor: 'var(--accent-green)', borderColor: 'var(--accent-green)', color: '#fff', fontWeight: 600 }}>
+                                                                 <CheckCircle size={14} /> Hoàn tất đơn
+                                                             </button>
+                                                         )}
                                                         {(booking.status === 'completed' || booking.rawStatus === 'Completed') && (
                                                             booking.hasReview ? (
                                                                 <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
