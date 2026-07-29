@@ -176,6 +176,11 @@ export default function ChatbotWidget() {
         });
     };
 
+    const hiddenRoutes = ['/auth', '/admin-dashboard', '/photographer-dashboard'];
+    if (hiddenRoutes.some(path => location.pathname.startsWith(path))) {
+        return null;
+    }
+
     return (
         <>
             {/* Floating Button */}
