@@ -78,11 +78,37 @@ export const adminService = {
    * @param {string} [status] - 'PendingPayment' | 'Confirmed' | 'Completed' | 'Cancelled' | 'all'
    * @returns {Promise<AdminBookingResponse[]>}
    */
-  getAllBookings: (status = 'all') => {
+  /**
+   * Danh sách đơn hàng toàn hệ thống.
+   * @param {string} [status] - 'PendingPayment' | 'Confirmed' | 'Completed' | 'Cancelled' | 'all'
+   * @param {string} [from] - ngày bắt đầu dạng yyyy-MM-dd, tính theo giờ Việt Nam
+   * @param {string} [to] - ngày kết thúc dạng yyyy-MM-dd, bao trọn cả ngày này
+   * @returns {Promise<AdminBookingResponse[]>}
+   */
+  getAllBookings: (status = 'all', from = '', to = '') => {
     const params = {};
     if (status && status !== 'all') params.status = status;
+    if (from) params.from = from;
+    if (to) params.to = to;
     return http.get('/api/admin/bookings', { params }).then((res) => res.data);
   },
+
+  /**
+   * Admin đóng đơn thay thợ. Bị từ chối nếu đơn chưa thu được tiền.
+   * @param {string} bookingId
+   * @returns {Promise<AdminBookingDetailResponse>}
+   */
+  forceCompleteBooking: (bookingId) =>
+    http.post(`/api/admin/bookings/${bookingId}/complete`).then((res) => res.data),
+
+  /**
+   * Đánh dấu đơn đã hoàn tiền. Chỉ ghi nhận trạng thái, không tự chuyển tiền.
+   * @param {string} bookingId
+   * @param {string} [note] - lý do hoàn tiền
+   * @returns {Promise<AdminBookingDetailResponse>}
+   */
+  refundBooking: (bookingId, note) =>
+    http.post(`/api/admin/bookings/${bookingId}/refund`, { note }).then((res) => res.data),
 
   // ── Activities ─────────────────────────────────────────────────────────────
   /**
@@ -150,4 +176,40 @@ export const adminService = {
    */
   getBookingDetail: (bookingId) =>
     http.get(`/api/admin/bookings/${bookingId}`).then((res) => res.data),
+
+
+  // ── Dashboard Tổng quan ────────────────────────────────────────────────────
+  /**
+   * Toàn bộ dữ liệu dashboard trong một lần gọi.
+   * @param {'today'|'7d'|'30d'|'quarter'} range
+   * @returns {Promise<AdminAnalyticsResponse>}
+   */
+  getAnalytics: (range = '30d') =>
+    http.get('/api/admin/analytics', { params: { range } }).then((res) => res.data),
+
+  // ── Đối soát thanh toán VietQR ─────────────────────────────────────────────
+  /**
+   * Danh sách giao dịch VietQR đang chờ admin đối soát.
+   * @returns {Promise<PendingPaymentResponse[]>}
+   */
+  getPendingPayments: () =>
+    http.get('/api/admin/payments/pending').then((res) => res.data),
+
+  /**
+   * Đơn VietQR đã tự huỷ trong 24 giờ qua, dùng để ghép với giao dịch lạ trong sao kê.
+   * @returns {Promise<PendingPaymentResponse[]>}
+   */
+  getRecentlyExpiredPayments: () =>
+    http.get('/api/admin/payments/recently-expired').then((res) => res.data),
+
+  /**
+   * Duyệt hoặc từ chối một giao dịch VietQR.
+   * @param {string} paymentId - GUID của payment transaction
+   * @param {boolean} approved - true = đã nhận được tiền
+   * @param {string} [note] - bắt buộc khi từ chối
+   * @returns {Promise<PaymentStatusResponse>}
+   */
+  verifyPayment: (paymentId, approved, note) =>
+    http.post(`/api/admin/payments/${paymentId}/verify`, { approved, note }).then((res) => res.data),
+
 };

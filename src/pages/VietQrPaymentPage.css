@@ -1,0 +1,165 @@
+.vietqr-page {
+    display: flex;
+    justify-content: center;
+    padding: 2.5rem 1rem 4rem;
+}
+
+.vietqr-card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--bg-secondary, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 16px;
+    padding: 1.75rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+}
+
+.vietqr-card-center {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.vietqr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.vietqr-header h2 {
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.vietqr-countdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+}
+
+.vietqr-countdown.expired {
+    color: #dc2626;
+}
+
+.vietqr-qr-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+}
+
+.vietqr-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.vietqr-row {
+    display: grid;
+    grid-template-columns: 9.5rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.7rem;
+    background: var(--bg-tertiary, #f9fafb);
+    border-radius: 8px;
+}
+
+.vietqr-row-label {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.vietqr-row-value {
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.vietqr-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-secondary, #6b7280);
+}
+
+.vietqr-copy-btn:hover {
+    background: var(--bg-secondary, #fff);
+    color: var(--primary-color, #6c5ce7);
+}
+
+.vietqr-warning {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.75rem 0.9rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #b91c1c;
+    margin-bottom: 1.1rem;
+}
+
+.vietqr-warning p {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.vietqr-claim-btn {
+    width: 100%;
+}
+
+.vietqr-back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    margin-top: 0.9rem;
+    font-size: 0.88rem;
+    color: var(--text-secondary, #6b7280);
+    text-decoration: none;
+}
+
+.vietqr-support-note {
+    font-size: 0.88rem;
+    color: var(--text-secondary, #6b7280);
+    margin: 0;
+}
+
+.vietqr-icon-danger {
+    color: #dc2626;
+}
+
+.vietqr-spin {
+    animation: vietqr-spin 1s linear infinite;
+    color: var(--primary-color, #6c5ce7);
+}
+
+@keyframes vietqr-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+    .vietqr-row {
+        grid-template-columns: 1fr auto;
+    }
+
+    .vietqr-row-label {
+        grid-column: 1 / -1;
+    }
+}

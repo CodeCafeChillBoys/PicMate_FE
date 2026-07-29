@@ -1,0 +1,289 @@
+/* ── Tab Quản lý đơn hàng ────────────────────────────────────────────────── */
+
+/* Cả tab là một khối con của vùng nội dung. Không đặt min-width: 0 thì mặc định
+   min-width: auto khiến khối không co lại được dưới bề rộng của bảng, đẩy cả
+   trang tràn ngang và cắt mất cột Hành động. */
+.admin-orders {
+    min-width: 0;
+}
+
+.admin-orders .admin-table-wrapper {
+    overflow-x: auto;
+}
+
+.admin-orders .spin-icon {
+    animation: spin 1s linear infinite;
+}
+
+.orders-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.orders-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.86rem;
+}
+
+.orders-date-filter input[type="date"] {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    background: var(--bg-primary, #fff);
+    color: var(--text-primary, #111827);
+    font-size: 0.86rem;
+    font-family: inherit;
+}
+
+.orders-date-filter input[type="date"]:focus-visible {
+    outline: 2px solid var(--primary, #6c5ce7);
+    outline-offset: 1px;
+}
+
+.orders-date-sep {
+    color: var(--text-muted, #9ca3af);
+}
+
+.orders-cell-center {
+    text-align: center;
+    padding: 1.75rem 0;
+    color: var(--text-muted, #9ca3af);
+}
+
+.orders-payment-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
+}
+
+.orders-provider {
+    font-size: 0.76rem;
+    color: var(--text-muted, #9ca3af);
+}
+
+/* Bảng rộng hơn khung nên phải cuộn ngang. Ghim cột thao tác bên phải để
+   người dùng luôn bấm được mà không phải cuộn tới cuối. */
+.orders-table th:last-child,
+.orders-table td:last-child {
+    position: sticky;
+    right: 0;
+    background: var(--bg-primary, #fff);
+    box-shadow: -8px 0 10px -8px rgba(0, 0, 0, 0.16);
+}
+
+.orders-table thead th:last-child {
+    background: var(--bg-tertiary, #f9fafb);
+    z-index: 2;
+}
+
+/* ── Menu thao tác ───────────────────────────────────────────────────────── */
+
+.order-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.order-menu {
+    /* Neo theo viewport để không bị khung bảng cuộn ngang cắt mất. */
+    position: fixed;
+    z-index: 200;
+    padding: 0.35rem;
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.order-menu button {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.65rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-primary, #111827);
+    font-size: 0.87rem;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.order-menu button:hover {
+    background: var(--bg-tertiary, #f3f4f6);
+}
+
+.order-menu button.danger {
+    color: #dc2626;
+}
+
+.order-menu button.danger:hover {
+    background: #fef2f2;
+}
+
+.table-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Nhãn chỉ dành cho trình đọc màn hình. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 900px) {
+    .orders-toolbar {
+        align-items: stretch;
+    }
+
+    .orders-date-filter {
+        flex-wrap: wrap;
+    }
+}
+
+/* Bảng 9 cột với padding 1.5rem mỗi bên tiêu tốn hơn 400px chỉ cho khoảng trắng,
+   đẩy bảng vượt khung và khiến cột ghim che mất Thanh toán với Trạng thái.
+   Thu padding lại cho vừa khung ở màn hình phổ thông. */
+.orders-table th,
+.orders-table td {
+    padding: var(--space-md) var(--space-sm);
+}
+
+.orders-table th:first-child,
+.orders-table td:first-child {
+    padding-left: var(--space-lg);
+}
+
+.orders-table .td-date {
+    white-space: nowrap;
+}
+
+/* ── Biểu đồ tóm tắt trên bảng ───────────────────────────────────────────── */
+
+.orders-charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+    .orders-charts {
+        grid-template-columns: 1fr;
+    }
+}
+
+.orders-chart-card {
+    background: var(--bg-primary, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.orders-chart-head {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.orders-chart-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.98rem;
+}
+
+.orders-chart-head p {
+    margin: 0.2rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-muted, #9ca3af);
+}
+
+.orders-chart-body {
+    padding: 1rem 1.1rem 1.2rem;
+}
+
+/* ── Biểu đồ cột ─────────────────────────────────────────────────────────── */
+
+.orders-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.4rem;
+    height: 180px;
+}
+
+.orders-bar-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    height: 100%;
+}
+
+.orders-bar-value {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    font-variant-numeric: tabular-nums;
+    min-height: 1em;
+}
+
+.orders-bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    min-height: 0;
+}
+
+.orders-bar-fill {
+    width: 100%;
+    /* Dùng cùng tông với các biểu đồ ở tab Tổng quan để cả khu quản trị đồng bộ. */
+    background: #6c5ce7;
+    border-radius: 5px 5px 2px 2px;
+    transition: height 0.3s ease;
+}
+
+.orders-bar-fill.is-empty {
+    background: var(--border-color, #e5e7eb);
+    border-radius: 2px;
+}
+
+.orders-bar-col:hover .orders-bar-fill:not(.is-empty) {
+    background: #5b4cd6;
+}
+
+.orders-bar-label {
+    font-size: 0.68rem;
+    color: var(--text-muted, #9ca3af);
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+}
+
+.orders-date-caption {
+    font-size: 0.82rem;
+    color: var(--text-muted, #9ca3af);
+    white-space: nowrap;
+}

@@ -10,7 +10,12 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { adminService } from '../../services/adminService';
-import { formatPrice } from '../../data/data';
+import { formatPrice, avatarFallback } from '../../data/data';
+
+import AdminReconciliationTab from './AdminReconciliationTab';
+import AdminOverviewTab from './overview/AdminOverviewTab';
+import AdminOrdersTab from './orders/AdminOrdersTab';
+
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
@@ -48,9 +53,11 @@ function EmptyRow({ cols = 7, message = 'Không có dữ liệu' }) {
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
+
+    const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
+
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
-    const [orderFilter, setOrderFilter] = useState('all');
     const [disputeFilter, setDisputeFilter] = useState('all');
     const { logout } = useAuth();
     const { data } = useAppData();
@@ -72,8 +79,7 @@ export default function AdminDashboard() {
     const [activeGraphers, setActiveGraphers] = useState([]);
     const [graphersLoading, setGraphersLoading] = useState(false);
 
-    const [bookings, setBookings] = useState([]);
-    const [bookingsLoading, setBookingsLoading] = useState(false);
+    // Danh sách đơn hàng do AdminOrdersTab tự tải và tự lọc.
 
     const [disputes, setDisputes] = useState([]);
     const [disputesLoading, setDisputesLoading] = useState(false);
@@ -104,6 +110,15 @@ export default function AdminDashboard() {
             .then(setActivities)
             .catch(console.error)
             .finally(() => setActivitiesLoading(false));
+
+        // Fetch counts for sidebar badges and landing quick actions
+        adminService.getPendingPayments()
+            .then(list => setPendingPaymentCount(list.length))
+            .catch(console.error);
+
+        adminService.getDisputes('Pending')
+            .then(setDisputes)
+            .catch(console.error);
     }, []);
 
     // ─── Fetch tab-specific data on tab switch ─────────────────────────────
@@ -135,15 +150,6 @@ export default function AdminDashboard() {
         }
     }, [activeTab]);
 
-    useEffect(() => {
-        if (activeTab === 'orders') {
-            setBookingsLoading(true);
-            adminService.getAllBookings(orderFilter === 'all' ? '' : orderFilter)
-                .then(setBookings)
-                .catch(console.error)
-                .finally(() => setBookingsLoading(false));
-        }
-    }, [activeTab, orderFilter]);
 
     useEffect(() => {
         if (activeTab === 'disputes') {
@@ -286,37 +292,8 @@ export default function AdminDashboard() {
         }
     }, [settingsForm]);
 
-    // ─── Derived stats from API ────────────────────────────────────────────
-    const adminStats = [
-        {
-            label: 'Tổng người dùng',
-            value: revenueLoading ? '...' : fmtNum(revenue?.totalUsers),
-            icon: <Users size={20} />,
-            color: 'var(--primary)',
-        },
-        {
-            label: 'Phone-Graphers',
-            value: revenueLoading ? '...' : fmtNum(revenue?.totalGraphers),
-            icon: <Camera size={20} />,
-            color: 'var(--accent-coral)',
-        },
-        {
-            label: 'Đơn hàng tháng',
-            value: revenueLoading ? '...' : fmtNum(revenue?.bookingsThisMonth),
-            icon: <Package size={20} />,
-            color: 'var(--accent-green)',
-        },
-        {
-            label: 'Doanh thu tháng',
-            value: revenueLoading ? '...' : formatPrice(revenue?.revenueThisMonth ?? 0),
-            icon: <DollarSign size={20} />,
-            color: 'var(--accent-gold)',
-        },
-    ];
-
-    // Dữ liệu biểu đồ từ API (12 tháng trong năm)
-    const monthlyData = revenue?.monthlyRevenue ?? [];
-    const maxRevenue = Math.max(...monthlyData.map(m => Number(m.grossRevenue)), 1);
+    // Các chỉ số tổng quan và biểu đồ doanh thu đã chuyển sang AdminOverviewTab,
+    // lấy từ endpoint /api/admin/analytics.
 
     const pendingDisputesCount = disputes.filter(d => d.status === 'Pending').length;
 
@@ -372,6 +349,9 @@ export default function AdminDashboard() {
                                     badge: revenue?.pendingKycCount || pendingGraphers.length || null
                                 },
                                 { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng' },
+
+                                { key: 'reconciliation', icon: <CreditCard size={18} />, label: 'Đối soát', badge: pendingPaymentCount || null },
+
                                 { key: 'disputes', icon: <AlertTriangle size={18} />, label: 'Tranh chấp', badge: pendingDisputesCount || null },
                                 { key: 'settings', icon: <Settings size={18} />, label: 'Cài đặt hệ thống' },
                             ].map(item => (
@@ -397,121 +377,12 @@ export default function AdminDashboard() {
 
                         {/* ===== OVERVIEW TAB ===== */}
                         {activeTab === 'overview' && (
-                            <>
-                                <div className="dashboard-content-header">
-                                    <h2>Tổng quan hệ thống</h2>
-                                    <div className="header-date">
-                                        <Calendar size={16} />
-                                        <span>{new Date().toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span>
-                                    </div>
-                                </div>
-
-                                <div className="stats-grid admin-stats">
-                                    {adminStats.map((stat, i) => (
-                                        <div key={i} className="stat-card">
-                                            <div className="stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>
-                                                {stat.icon}
-                                            </div>
-                                            <div className="stat-content">
-                                                <span className="stat-label">{stat.label}</span>
-                                                <strong className="stat-value">{stat.value}</strong>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Revenue Summary Cards */}
-                                {!revenueLoading && revenue && (
-                                    <div className="admin-revenue-summary">
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Tổng doanh thu</span>
-                                            <strong className="revenue-value">{formatPrice(revenue.grossRevenue)}</strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Phí platform</span>
-                                            <strong className="revenue-value" style={{ color: 'var(--accent-green)' }}>
-                                                {formatPrice(revenue.platformRevenue)}
-                                            </strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Thanh toán cho Grapher</span>
-                                            <strong className="revenue-value" style={{ color: 'var(--accent-coral)' }}>
-                                                {formatPrice(revenue.grapherPayouts)}
-                                            </strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Đơn hoàn thành</span>
-                                            <strong className="revenue-value">{fmtNum(revenue.completedBookings)}</strong>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Revenue Chart – dữ liệu thực từ API */}
-                                <div className="admin-chart-card" id="revenue-chart">
-                                    <div className="chart-header">
-                                        <div>
-                                            <h3><BarChart3 size={18} /> Doanh thu {new Date().getFullYear()} (theo tháng)</h3>
-                                            <p>Tổng doanh thu bao gồm phí platform</p>
-                                        </div>
-                                        <div className="chart-summary">
-                                            <span className="chart-total">
-                                                {revenueLoading ? '...' : formatPrice(revenue?.grossRevenue ?? 0)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {revenueLoading ? (
-                                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                                        </div>
-                                    ) : (
-                                        <div className="chart-bars-container">
-                                            {monthlyData.map((m) => {
-                                                const pct = maxRevenue > 0
-                                                    ? Math.max((Number(m.grossRevenue) / maxRevenue) * 100, m.bookingCount > 0 ? 4 : 0)
-                                                    : 0;
-                                                return (
-                                                    <div key={m.month} className="chart-bar-wrapper">
-                                                        <div className="chart-bar" style={{ height: `${pct}%` }}>
-                                                            <span className="chart-bar-tooltip">
-                                                                {formatPrice(m.grossRevenue)}<br />
-                                                                {m.bookingCount} đơn
-                                                            </span>
-                                                        </div>
-                                                        <span className="chart-bar-label">{m.label}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Activity Feed & Quick Actions */}
-                                <div className="admin-overview-grid">
-                                    <div className="activity-feed-card">
-                                        <div className="card-header-row">
-                                            <h3>📊 Hoạt động gần đây</h3>
-                                            {activitiesLoading && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
-                                        </div>
-                                        <div className="activity-list">
-                                            {activitiesLoading ? (
-                                                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
-                                                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                                                </div>
-                                            ) : activities.length === 0 ? (
-                                                <p style={{ color: 'var(--text-muted)', padding: '1rem' }}>Chưa có hoạt động nào</p>
-                                            ) : activities.map(a => (
-                                                <div key={a.id} className="activity-item">
-                                                    <span className="activity-icon">{a.icon}</span>
-                                                    <div className="activity-content">
-                                                        <p>{a.text}</p>
-                                                        <span className="activity-time"><Clock size={12} /> {a.time}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="quick-actions-card">
+                            <AdminOverviewTab
+                                active
+                                activities={activities}
+                                activitiesLoading={activitiesLoading}
+                                quickActions={(
+                                    <div className="quick-actions-card admin-overview-quick">
                                         <div className="card-header-row">
                                             <h3>⚡ Hành động nhanh</h3>
                                         </div>
@@ -548,8 +419,8 @@ export default function AdminDashboard() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
-                            </>
+                                )}
+                            />
                         )}
 
                         {/* ===== USERS TAB ===== */}
@@ -682,10 +553,7 @@ export default function AdminDashboard() {
                                             {pendingGraphers.map(p => (
                                                 <div key={p.id} className="pending-card" id={`pending-${p.id}`}>
                                                     <div className="pending-info">
-                                                        {p.avatar
-                                                            ? <img src={p.avatar} alt={p.name} className="avatar" />
-                                                            : <div className="user-cell-avatar">{p.name.charAt(0)}</div>
-                                                        }
+                                                        <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(p.name); }} />
                                                         <div>
                                                             <strong>{p.name}</strong>
                                                             <span><MapPin size={12} /> {p.location || 'Chưa cập nhật'}</span>
@@ -745,10 +613,7 @@ export default function AdminDashboard() {
                                                     <tr key={p.id}>
                                                         <td>
                                                             <div className="user-cell">
-                                                                {p.avatar
-                                                                    ? <img src={p.avatar} alt={p.name} className="avatar" style={{ width: 32, height: 32 }} />
-                                                                    : <div className="user-cell-avatar">{(p.name || '?').charAt(0)}</div>
-                                                                }
+                                                                <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" style={{ width: 32, height: 32 }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(p.name); }} />
                                                                 <strong>{p.name}</strong>
                                                             </div>
                                                         </td>
@@ -760,7 +625,7 @@ export default function AdminDashboard() {
                                                                 <span className="review-count">({p.reviewCount})</span>
                                                             </div>
                                                         </td>
-                                                        <td className="td-num">{p.reviewCount}</td>
+                                                        <td className="td-num">{p.totalBookings}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                                 <span className={`badge ${p.isOnline ? 'badge-success' : 'badge-warning'}`}>
@@ -802,92 +667,10 @@ export default function AdminDashboard() {
 
                         {/* ===== ORDERS TAB ===== */}
                         {activeTab === 'orders' && (
-                            <>
-                                <div className="dashboard-content-header">
-                                    <h2>Quản lý đơn hàng</h2>
-                                    <div className="order-summary-badges">
-                                        <span className="summary-badge">
-                                            <Package size={14} /> Tổng: <strong>{bookingsLoading ? '...' : bookings.length}</strong>
-                                        </span>
-                                        <span className="summary-badge revenue">
-                                            <DollarSign size={14} /> Doanh thu: <strong>
-                                                {bookingsLoading ? '...' : formatPrice(bookings.reduce((s, b) => s + (b.total || 0), 0))}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="admin-filter-row">
-                                    {[
-                                        { key: 'all', label: 'Tất cả' },
-                                        { key: 'PendingPayment', label: 'Chờ thanh toán' },
-                                        { key: 'PendingConfirmation', label: 'Chờ xác nhận' },
-                                        { key: 'Confirmed', label: 'Đã xác nhận' },
-                                        { key: 'Completed', label: 'Hoàn thành' },
-                                        { key: 'Cancelled', label: 'Đã hủy' },
-                                    ].map(f => (
-                                        <button
-                                            key={f.key}
-                                            className={`order-filter-tab ${orderFilter === f.key ? 'active' : ''}`}
-                                            onClick={() => setOrderFilter(f.key)}
-                                        >
-                                            {f.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="admin-table-wrapper">
-                                    <table className="admin-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Mã đơn</th>
-                                                <th>Thợ chụp</th>
-                                                <th>Dịch vụ</th>
-                                                <th>Ngày</th>
-                                                <th>Địa điểm</th>
-                                                <th>Tổng tiền</th>
-                                                <th>Trạng thái</th>
-                                                <th>Hành động</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {bookingsLoading ? (
-                                                <LoadingRow cols={8} />
-                                            ) : bookings.length === 0 ? (
-                                                <EmptyRow cols={8} message="Không có đơn hàng nào" />
-                                            ) : bookings.map(b => (
-                                                <tr key={b.id}>
-                                                    <td><code className="order-code">{b.id.substring(0, 8)}...</code></td>
-                                                    <td>
-                                                        <div className="user-cell">
-                                                            {b.photographerAvatar
-                                                                ? <img src={b.photographerAvatar} alt={b.photographerName} className="avatar" style={{ width: 28, height: 28 }} />
-                                                                : <div className="user-cell-avatar" style={{ width: 28, height: 28, fontSize: 12 }}>{(b.photographerName || '?').charAt(0)}</div>
-                                                            }
-                                                            <span>{b.photographerName}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>{b.service}</td>
-                                                    <td className="td-date">{b.date}</td>
-                                                    <td className="td-location">{b.location}</td>
-                                                    <td><strong className="td-price">{formatPrice(b.total)}</strong></td>
-                                                    <td>{getStatusBadge(b.status)}</td>
-                                                    <td>
-                                                        <div className="table-actions">
-                                                            <button className="table-action-btn" title="Xem chi tiết" onClick={() => handleViewBooking(b.id)}>
-                                                                <Eye size={15} />
-                                                            </button>
-                                                            <button className="table-action-btn" title="Thêm">
-                                                                <MoreHorizontal size={15} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
+                            <AdminOrdersTab
+                                active
+                                onViewDetail={handleViewBooking}
+                            />
                         )}
 
                         {/* ===== DISPUTES TAB ===== */}
@@ -948,10 +731,7 @@ export default function AdminDashboard() {
 
                                                 <div className="dispute-parties">
                                                     <div className="dispute-party">
-                                                        {d.reporterAvatar
-                                                            ? <img src={d.reporterAvatar} alt={d.reporterName} className="avatar" />
-                                                            : <div className="user-cell-avatar">{(d.reporterName || '?').charAt(0)}</div>
-                                                        }
+                                                        <img src={d.reporterAvatar || avatarFallback(d.reporterName)} alt={d.reporterName} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(d.reporterName); }} />
                                                         <div>
                                                             <span className="party-role">Người báo cáo</span>
                                                             <strong>{d.reporterName}</strong>
@@ -959,10 +739,7 @@ export default function AdminDashboard() {
                                                     </div>
                                                     <span className="dispute-vs">VS</span>
                                                     <div className="dispute-party">
-                                                        {d.respondentAvatar
-                                                            ? <img src={d.respondentAvatar} alt={d.respondentName} className="avatar" />
-                                                            : <div className="user-cell-avatar">{(d.respondentName || '?').charAt(0)}</div>
-                                                        }
+                                                        <img src={d.respondentAvatar || avatarFallback(d.respondentName)} alt={d.respondentName} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(d.respondentName); }} />
                                                         <div>
                                                             <span className="party-role">Bị báo cáo</span>
                                                             <strong>{d.respondentName}</strong>
@@ -1002,6 +779,14 @@ export default function AdminDashboard() {
                                 )}
                             </>
                         )}
+
+
+                        {/* ===== RECONCILIATION TAB ===== */}
+                        <AdminReconciliationTab
+                            active={activeTab === 'reconciliation'}
+                            onPendingCountChange={setPendingPaymentCount}
+                        />
+
 
                         {/* ===== SETTINGS TAB ===== */}
                         {activeTab === 'settings' && (
@@ -1232,7 +1017,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="admin-detail-grid">
                                 <div className="admin-detail-full" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <img src={viewGrapherModal.avatar || 'https://via.placeholder.com/80'} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
+                                    <img src={viewGrapherModal.avatar || avatarFallback(viewGrapherModal.name)} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(viewGrapherModal.name); }} />
                                     <div>
                                         <h3 style={{ margin: '0 0 0.25rem 0' }}>{viewGrapherModal.name}</h3>
                                         <p style={{ margin: 0, color: 'var(--text-muted)' }}>{viewGrapherModal.location}</p>

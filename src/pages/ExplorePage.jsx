@@ -4,7 +4,7 @@ import { Search, MapPin, Star, SlidersHorizontal, X, Zap, CheckCircle, Filter, H
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
-import { formatPrice } from '../data/data';
+import { formatPrice, avatarFallback } from '../data/data';
 import toast from 'react-hot-toast';
 import './ExplorePage.css';
 
@@ -169,7 +169,7 @@ export default function ExplorePage() {
                                 {filtered.map((p, i) => (
                                     <Link to={`/photographer/${p.id}`} key={p.id} className="photographer-card" id={`explore-card-${p.id}`}>
                                         <div className="photographer-card-img">
-                                            <img src={p.portfolio?.[0] || p.avatar || ''} alt={p.name} />
+                                            <img src={p.portfolio?.[0] || p.avatar || null} alt={p.name} />
                                             <div className="photographer-card-overlay">
                                                 <span className="btn btn-sm btn-primary">Xem hồ sơ</span>
                                             </div>
@@ -186,7 +186,7 @@ export default function ExplorePage() {
                                         </div>
                                         <div className="photographer-card-body">
                                             <div className="photographer-card-header">
-                                                <img src={p.avatar} alt={p.name} className="avatar" />
+                                                <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" />
                                                 <div>
                                                     <h4>{p.name}</h4>
                                                     <span className="photographer-card-location"><MapPin size={14} /> {p.location || 'Chưa cập nhật'}</span>

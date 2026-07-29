@@ -7,7 +7,10 @@ import {
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
-import { formatPrice } from '../data/data';
+
+import { formatPrice, avatarFallback } from '../data/data';
+
+
 import { API_BASE_URL } from '../services/http';
 import ChatComponent from '../components/chat/ChatComponent';
 import toast from 'react-hot-toast';
@@ -92,7 +95,7 @@ export default function PhotographerProfile() {
                         {/* Header */}
                         <div className="profile-header">
                             <div className="profile-avatar-section">
-                                <img src={photographer.avatar} alt={photographer.name} className="profile-avatar" />
+                                <img src={photographer.avatar || avatarFallback(photographer.name)} alt={photographer.name} className="profile-avatar" />
                                 <div className="profile-info">
                                     <div className="profile-name-row">
                                         <h1>{photographer.name}</h1>
@@ -174,10 +177,16 @@ export default function PhotographerProfile() {
                                 {(photographer.reviews?.length || 0) > 0 ? photographer.reviews.map(review => (
                                     <div key={review.id} className="review-card">
                                         <div className="review-header">
-                                            <img src={review.avatar} alt={review.user} className="avatar" />
+
+                                            <img src={review.avatar || avatarFallback(review.user)} alt={review.user} className="avatar" />
                                             <div>
                                                 <strong>{review.user}</strong>
-                                                <span className="review-date">{review.date}</span>
+                                                <span className="review-date">
+                                                    {new Date(review.createdAt).toLocaleDateString('vi-VN', {
+                                                        day: '2-digit', month: '2-digit', year: 'numeric',
+                                                    })}
+                                                </span>
+
                                             </div>
                                             <div className="review-stars">
                                                 {Array.from({ length: review.rating }).map((_, j) => (

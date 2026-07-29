@@ -4,7 +4,9 @@ import { AppDataProvider } from './context/AppDataContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+
 import ChatbotWidget from './components/chatbot/ChatbotWidget';
+
 import HomePage from './pages/HomePage';
 import ExplorePage from './pages/ExplorePage';
 import PhotographerProfile from './pages/PhotographerProfile';
@@ -16,7 +18,11 @@ import PhotographerDashboard from './pages/dashboard/PhotographerDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import InstantPage from './pages/InstantPage';
 import PaymentResultPage from './pages/PaymentResultPage';
+
+import VietQrPaymentPage from './pages/VietQrPaymentPage';
+
 import { FAQPage, PrivacyPolicyPage, TermsPage, RefundPolicyPage } from './pages/SupportPages';
+
 import DirectAccessRoute from './components/auth/DirectAccessRoute';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
@@ -40,10 +46,18 @@ function App() {
               <Route path="/presets" element={<PresetShop />} />
               <Route path="/instant" element={<InstantPage />} />
               <Route path="/payment-result" element={<PaymentResultPage />} />
+
+              <Route path="/payment/vietqr/:bookingId" element={
+                <DirectAccessRoute role="customer">
+                  <VietQrPaymentPage />
+                </DirectAccessRoute>
+              } />
+
               <Route path="/faq" element={<FAQPage />} />
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refund-policy" element={<RefundPolicyPage />} />
+
               <Route path="/customer-dashboard" element={
                 <DirectAccessRoute role="customer">
                   <CustomerDashboard />
@@ -62,7 +76,9 @@ function App() {
               </Routes>
               </main>
               <Footer />
+
               <ChatbotWidget />
+
             </div>
           </ErrorBoundary>
         </AuthProvider>

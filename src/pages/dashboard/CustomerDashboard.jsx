@@ -397,7 +397,7 @@ export default function CustomerDashboard() {
                                             <div key={booking.id} className={`order-card order-status-${booking.status}`} id={`order-${booking.id}`}>
                                                 <div className="order-card-header">
                                                     <div className="order-photographer">
-                                                        <img src={booking.photographerAvatar} alt={booking.photographerName} className="avatar" />
+                                                        <img src={booking.photographerAvatar || avatarFallback(booking.photographerName)} alt={booking.photographerName} className="avatar" />
                                                         <div>
                                                             <strong>{booking.photographerName}</strong>
                                                             <span>{booking.service}</span>
@@ -434,7 +434,7 @@ export default function CustomerDashboard() {
                                     <div className="fav-mini-grid">
                                         {favoritePhotographers.slice(0, 3).map(p => (
                                             <Link to={`/photographer/${p.id}`} key={p.id} className="fav-mini-card" id={`fav-mini-${p.id}`}>
-                                                <img src={p.avatar} alt={p.name} className="avatar" />
+                                                <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" />
                                                 <div>
                                                     <strong>{p.name}</strong>
                                                     <span>{p.location}</span>
@@ -475,7 +475,7 @@ export default function CustomerDashboard() {
                                         <div key={booking.id} className={`order-card order-status-${booking.status}`} id={`order-${booking.id}`}>
                                             <div className="order-card-header">
                                                 <div className="order-photographer">
-                                                    <img src={booking.photographerAvatar} alt={booking.photographerName} className="avatar" />
+                                                    <img src={booking.photographerAvatar || avatarFallback(booking.photographerName)} alt={booking.photographerName} className="avatar" />
                                                     <div>
                                                         <strong>{booking.photographerName}</strong>
                                                         <span>{booking.service}</span>
@@ -581,7 +581,7 @@ export default function CustomerDashboard() {
                                             </div>
                                             <div className="favorite-info">
                                                 <div className="favorite-header">
-                                                    <img src={p.avatar} alt={p.name} className="avatar" />
+                                                    <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" />
                                                     <div>
                                                         <strong>{p.name}</strong>
                                                         <div className="favorite-meta">

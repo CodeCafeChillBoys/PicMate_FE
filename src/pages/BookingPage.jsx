@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
     Calendar, Clock, MapPin, Camera, FileText, ChevronLeft, ChevronRight,
-    CheckCircle, CreditCard, Shield, Zap, Award, Star, Wallet
+    CheckCircle, CreditCard, Shield, Zap, Award, Star, Wallet, QrCode
+
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { formatPrice } from '../data/data';
+import { formatPrice, avatarFallback } from '../data/data';
 import { apiClient } from '../services/apiClient';
 import { API_BASE_URL } from '../services/http';
 import toast from 'react-hot-toast';
@@ -13,6 +15,9 @@ import './BookingPage.css';
 
 export default function BookingPage() {
     const { id } = useParams();
+
+    const navigate = useNavigate();
+
     const [photographer, setPhotographer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -25,7 +30,9 @@ export default function BookingPage() {
         note: '',
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('vnpay');
+
+    const [paymentMethod, setPaymentMethod] = useState('vietqr');
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -94,7 +101,12 @@ export default function BookingPage() {
             };
 
             const response = await apiClient.createBooking(payload);
-            if (response.paymentUrl) {
+
+
+            if (paymentMethod === 'vietqr') {
+                navigate(`/payment/vietqr/${response.booking.id}`);
+            } else if (response.paymentUrl) {
+
                 window.location.href = response.paymentUrl;
             } else {
                 toast.success('Đặt lịch thành công! Bạn sẽ trả tiền mặt khi gặp thợ.');
@@ -274,6 +286,15 @@ export default function BookingPage() {
                                     </div>
                                 </div>
                                 <div className="payment-methods">
+
+                                    <button type="button" className={`payment-method-card ${paymentMethod === 'vietqr' ? 'active' : ''}`} onClick={() => setPaymentMethod('vietqr')}>
+                                        <QrCode size={22} />
+                                        <div className="payment-method-text">
+                                            <strong>Chuyển khoản ngân hàng (VietQR)</strong>
+                                            <span>Quét mã bằng app ngân hàng bất kỳ</span>
+                                        </div>
+                                    </button>
+
                                     <button type="button" className={`payment-method-card ${paymentMethod === 'vnpay' ? 'active' : ''}`} onClick={() => setPaymentMethod('vnpay')}>
                                         <CreditCard size={22} />
                                         <div className="payment-method-text">
@@ -291,9 +312,13 @@ export default function BookingPage() {
                                 </div>
                                 <div className="escrow-notice">
                                     <Shield size={18} />
-                                    <p>{paymentMethod === 'vnpay'
-                                        ? 'Số tiền của bạn được PICMate đảm bảo an toàn cho đến khi buổi chụp hoàn tất.'
-                                        : 'Bạn sẽ trả tiền mặt trực tiếp cho thợ khi buổi chụp diễn ra. Đơn sẽ chờ thợ xác nhận sau khi đặt.'}</p>
+
+                                    <p>{paymentMethod === 'cod'
+                                        ? 'Bạn sẽ trả tiền mặt trực tiếp cho thợ khi buổi chụp diễn ra. Đơn sẽ chờ thợ xác nhận sau khi đặt.'
+                                        : paymentMethod === 'vietqr'
+                                            ? 'Bạn sẽ chuyển khoản qua mã VietQR. PICMate giữ tiền cho tới khi buổi chụp hoàn tất. Đơn được xác nhận sau khi PICMate đối soát giao dịch.'
+                                            : 'Số tiền của bạn được PICMate đảm bảo an toàn cho đến khi buổi chụp hoàn tất.'}</p>
+
                                 </div>
                             </div>
                         )}
@@ -326,6 +351,10 @@ export default function BookingPage() {
                                         'Đang xử lý...'
                                     ) : paymentMethod === 'cod' ? (
                                         <><Wallet size={18} /> Đặt lịch (trả sau)</>
+
+                                    ) : paymentMethod === 'vietqr' ? (
+                                        <><QrCode size={18} /> Xác nhận & Lấy mã QR</>
+
                                     ) : (
                                         <><CreditCard size={18} /> Xác nhận & Thanh toán</>
                                     )}
@@ -338,7 +367,7 @@ export default function BookingPage() {
                     <aside className="booking-sidebar">
                         <div className="booking-sidebar-card">
                             <div className="booking-photographer-info">
-                                <img src={photographer.avatar} alt={photographer.name} className="avatar-lg" />
+                                <img src={photographer.avatar || avatarFallback(photographer.name)} alt={photographer.name} className="avatar-lg" />
                                 <div>
                                     <h3>{photographer.name}</h3>
                                     <span className="photographer-card-location"><MapPin size={14} /> {photographer.location}</span>

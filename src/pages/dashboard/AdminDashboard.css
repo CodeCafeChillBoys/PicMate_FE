@@ -1130,4 +1130,67 @@
 
 .mini-table tbody tr:hover {
     background: var(--bg-tertiary);
+
+}
+/* ── Tab Đối soát VietQR ─────────────────────────────────────────────────── */
+
+.admin-reconciliation-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.admin-reconciliation-header h2 {
+    margin: 0 0 0.35rem;
+}
+
+.admin-reconciliation-hint {
+    margin: 0 0 1rem;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--text-secondary, #6b7280);
+    max-width: 62ch;
+}
+
+.admin-reconciliation-section {
+    margin: 1.75rem 0 0.75rem;
+    font-size: 1rem;
+}
+
+.admin-reconciliation-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+
+/* "Hành động nhanh" nằm trong cột phải của tab Tổng quan: bỏ chiều rộng tối thiểu
+   và cho các nút xếp dọc một cột để vừa cột hẹp. */
+.quick-actions-card.admin-overview-quick {
+    margin: 0;
+}
+
+.quick-actions-card.admin-overview-quick .quick-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quick-actions-card.admin-overview-quick .quick-action-btn {
+    width: 100%;
+}
+
+/* dashboard-content là ô thứ hai của lưới dashboard-layout. Mặc định min-width: auto
+   khiến ô này bị nội dung rộng (bảng đơn hàng 9 cột) kéo giãn, đẩy cả trang tràn ngang.
+   Đặt min-width: 0 để ô co đúng phần được chia, phần dư do bảng tự cuộn ngang.
+   Khoanh trong .admin-dashboard để không ảnh hưởng dashboard khách hàng và thợ. */
+.admin-dashboard .dashboard-content {
+    min-width: 0;
+}
+
+/* Trang quản trị hiển thị bảng nhiều cột nên cần rộng hơn giới hạn 1280px
+   vốn dành cho các trang giới thiệu. Không đụng .container dùng chung. */
+.admin-dashboard .container {
+    max-width: 1600px;
 }
