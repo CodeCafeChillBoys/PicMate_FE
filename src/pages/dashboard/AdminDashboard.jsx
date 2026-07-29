@@ -13,6 +13,7 @@ import { adminService } from '../../services/adminService';
 import { formatPrice, avatarFallback } from '../../data/data';
 
 import AdminReconciliationTab from './AdminReconciliationTab';
+import AdminOverviewTab from './overview/AdminOverviewTab';
 
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
@@ -301,37 +302,8 @@ export default function AdminDashboard() {
         }
     }, [settingsForm]);
 
-    // ─── Derived stats from API ────────────────────────────────────────────
-    const adminStats = [
-        {
-            label: 'Tổng người dùng',
-            value: revenueLoading ? '...' : fmtNum(revenue?.totalUsers),
-            icon: <Users size={20} />,
-            color: 'var(--primary)',
-        },
-        {
-            label: 'Phone-Graphers',
-            value: revenueLoading ? '...' : fmtNum(revenue?.totalGraphers),
-            icon: <Camera size={20} />,
-            color: 'var(--accent-coral)',
-        },
-        {
-            label: 'Đơn hàng tháng',
-            value: revenueLoading ? '...' : fmtNum(revenue?.bookingsThisMonth),
-            icon: <Package size={20} />,
-            color: 'var(--accent-green)',
-        },
-        {
-            label: 'Doanh thu tháng',
-            value: revenueLoading ? '...' : formatPrice(revenue?.revenueThisMonth ?? 0),
-            icon: <DollarSign size={20} />,
-            color: 'var(--accent-gold)',
-        },
-    ];
-
-    // Dữ liệu biểu đồ từ API (12 tháng trong năm)
-    const monthlyData = revenue?.monthlyRevenue ?? [];
-    const maxRevenue = Math.max(...monthlyData.map(m => Number(m.grossRevenue)), 1);
+    // Các chỉ số tổng quan và biểu đồ doanh thu đã chuyển sang AdminOverviewTab,
+    // lấy từ endpoint /api/admin/analytics.
 
     const pendingDisputesCount = disputes.filter(d => d.status === 'Pending').length;
 
@@ -416,120 +388,13 @@ export default function AdminDashboard() {
                         {/* ===== OVERVIEW TAB ===== */}
                         {activeTab === 'overview' && (
                             <>
-                                <div className="dashboard-content-header">
-                                    <h2>Tổng quan hệ thống</h2>
-                                    <div className="header-date">
-                                        <Calendar size={16} />
-                                        <span>{new Date().toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' })}</span>
-                                    </div>
-                                </div>
+                                <AdminOverviewTab
+                                    active
+                                    activities={activities}
+                                    activitiesLoading={activitiesLoading}
+                                />
 
-                                <div className="stats-grid admin-stats">
-                                    {adminStats.map((stat, i) => (
-                                        <div key={i} className="stat-card">
-                                            <div className="stat-icon" style={{ background: `${stat.color}15`, color: stat.color }}>
-                                                {stat.icon}
-                                            </div>
-                                            <div className="stat-content">
-                                                <span className="stat-label">{stat.label}</span>
-                                                <strong className="stat-value">{stat.value}</strong>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Revenue Summary Cards */}
-                                {!revenueLoading && revenue && (
-                                    <div className="admin-revenue-summary">
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Tổng doanh thu</span>
-                                            <strong className="revenue-value">{formatPrice(revenue.grossRevenue)}</strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Phí platform</span>
-                                            <strong className="revenue-value" style={{ color: 'var(--accent-green)' }}>
-                                                {formatPrice(revenue.platformRevenue)}
-                                            </strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Thanh toán cho Grapher</span>
-                                            <strong className="revenue-value" style={{ color: 'var(--accent-coral)' }}>
-                                                {formatPrice(revenue.grapherPayouts)}
-                                            </strong>
-                                        </div>
-                                        <div className="revenue-card">
-                                            <span className="revenue-label">Đơn hoàn thành</span>
-                                            <strong className="revenue-value">{fmtNum(revenue.completedBookings)}</strong>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Revenue Chart – dữ liệu thực từ API */}
-                                <div className="admin-chart-card" id="revenue-chart">
-                                    <div className="chart-header">
-                                        <div>
-                                            <h3><BarChart3 size={18} /> Doanh thu {new Date().getFullYear()} (theo tháng)</h3>
-                                            <p>Tổng doanh thu bao gồm phí platform</p>
-                                        </div>
-                                        <div className="chart-summary">
-                                            <span className="chart-total">
-                                                {revenueLoading ? '...' : formatPrice(revenue?.grossRevenue ?? 0)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {revenueLoading ? (
-                                        <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                                            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                                        </div>
-                                    ) : (
-                                        <div className="chart-bars-container">
-                                            {monthlyData.map((m) => {
-                                                const pct = maxRevenue > 0
-                                                    ? Math.max((Number(m.grossRevenue) / maxRevenue) * 100, m.bookingCount > 0 ? 4 : 0)
-                                                    : 0;
-                                                return (
-                                                    <div key={m.month} className="chart-bar-wrapper">
-                                                        <div className="chart-bar" style={{ height: `${pct}%` }}>
-                                                            <span className="chart-bar-tooltip">
-                                                                {formatPrice(m.grossRevenue)}<br />
-                                                                {m.bookingCount} đơn
-                                                            </span>
-                                                        </div>
-                                                        <span className="chart-bar-label">{m.label}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Activity Feed & Quick Actions */}
-                                <div className="admin-overview-grid">
-                                    <div className="activity-feed-card">
-                                        <div className="card-header-row">
-                                            <h3>📊 Hoạt động gần đây</h3>
-                                            {activitiesLoading && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
-                                        </div>
-                                        <div className="activity-list">
-                                            {activitiesLoading ? (
-                                                <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)' }}>
-                                                    <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-                                                </div>
-                                            ) : activities.length === 0 ? (
-                                                <p style={{ color: 'var(--text-muted)', padding: '1rem' }}>Chưa có hoạt động nào</p>
-                                            ) : activities.map(a => (
-                                                <div key={a.id} className="activity-item">
-                                                    <span className="activity-icon">{a.icon}</span>
-                                                    <div className="activity-content">
-                                                        <p>{a.text}</p>
-                                                        <span className="activity-time"><Clock size={12} /> {a.time}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="quick-actions-card">
+                                    <div className="quick-actions-card admin-overview-quick">
                                         <div className="card-header-row">
                                             <h3>⚡ Hành động nhanh</h3>
                                         </div>
@@ -566,7 +431,6 @@ export default function AdminDashboard() {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
                             </>
                         )}
 

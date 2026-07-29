@@ -152,6 +152,15 @@ export const adminService = {
     http.get(`/api/admin/bookings/${bookingId}`).then((res) => res.data),
 
 
+  // ── Dashboard Tổng quan ────────────────────────────────────────────────────
+  /**
+   * Toàn bộ dữ liệu dashboard trong một lần gọi.
+   * @param {'today'|'7d'|'30d'|'quarter'} range
+   * @returns {Promise<AdminAnalyticsResponse>}
+   */
+  getAnalytics: (range = '30d') =>
+    http.get('/api/admin/analytics', { params: { range } }).then((res) => res.data),
+
   // ── Đối soát thanh toán VietQR ─────────────────────────────────────────────
   /**
    * Danh sách giao dịch VietQR đang chờ admin đối soát.

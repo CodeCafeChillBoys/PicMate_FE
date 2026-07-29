@@ -1164,3 +1164,8 @@
     gap: 0.4rem;
 }
 
+
+/* Khối "Hành động nhanh" đứng riêng sau khi tab Tổng quan được viết lại. */
+.quick-actions-card.admin-overview-quick {
+    margin-top: 1.25rem;
+}
