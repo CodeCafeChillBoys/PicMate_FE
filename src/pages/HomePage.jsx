@@ -10,7 +10,7 @@ import { formatPrice } from '../data/data';
 import './HomePage.css';
 
 export default function HomePage() {
-    const [activeStyle, setActiveStyle] = useState(null);
+
     const [searchQuery, setSearchQuery] = useState('');
     const { data } = useAppData();
     
@@ -190,34 +190,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ===== STYLE TAGS ===== */}
-            <section className="section styles-section" id="style-tags">
-                <div className="container">
-                    <div className="section-header">
-                        <span className="section-label">Phong cách</span>
-                        <h2>Chọn phong cách <span className="gradient-text">yêu thích</span></h2>
-                        <p>Từ Hàn Quốc minimal đến vintage cá tính – tìm Phone Grapher phù hợp với gu của bạn.</p>
-                    </div>
-                    <div className="styles-grid">
-                        {styles.map((style, i) => (
-                            <Link
-                                to={`/explore?style=${style.name}`}
-                                key={style.id}
-                                className={`style-card ${activeStyle === style.id ? 'active' : ''}`}
-                                id={`style-card-${style.id}`}
-                                onMouseEnter={() => setActiveStyle(style.id)}
-                                onMouseLeave={() => setActiveStyle(null)}
-                                style={{ animationDelay: `${i * 0.1}s` }}
-                            >
-                                <span className="style-emoji">{style.emoji}</span>
-                                <h3>{style.name}</h3>
-                                <span className="style-count">{photographers.filter(p => p.styles.includes(style.name)).length}+ thợ</span>
-                                <div className="style-card-glow" style={{ background: style.color }} />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
+
 
             {/* ===== INSTANT BOOKING ===== */}
             <section className="section instant-section" id="instant-booking">
