@@ -225,10 +225,18 @@
 
 .payment-methods {
     display: grid;
-    grid-template-columns: 1fr;
+
+    grid-template-columns: 1fr 1fr;
+
     gap: var(--space-md);
     margin: var(--space-lg) 0 var(--space-md);
 }
+
+
+@media (max-width: 560px) {
+    .payment-methods { grid-template-columns: 1fr; }
+}
+
 
 .payment-method-card {
     display: flex;

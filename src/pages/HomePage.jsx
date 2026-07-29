@@ -6,11 +6,13 @@ import {
     CheckCircle, Crown, Heart, Download, Eye
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
+
 import { formatPrice, avatarFallback } from '../data/data';
 import './HomePage.css';
 
 export default function HomePage() {
     const [activeStyle, setActiveStyle] = useState(null);
+
     const [searchQuery, setSearchQuery] = useState('');
     const { data } = useAppData();
     
@@ -196,6 +198,7 @@ export default function HomePage() {
                 </div>
             </section>
 
+
             {/* ===== STYLE TAGS ===== */}
             <section className="section styles-section" id="style-tags">
                 <div className="container">
@@ -224,6 +227,7 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
+
 
             {/* ===== INSTANT BOOKING ===== */}
             <section className="section instant-section" id="instant-booking">
@@ -324,8 +328,10 @@ export default function HomePage() {
             </section>
 
             {/* ===== TESTIMONIALS ===== */}
+
             {/* Chưa có review nào đạt chuẩn thì ẩn hẳn, tránh tiêu đề trống trơ trọi. */}
             {testimonials.length > 0 && (
+
             <section className="section testimonials-section" id="testimonials">
                 <div className="container">
                     <div className="section-header">
@@ -343,7 +349,9 @@ export default function HomePage() {
                                 </div>
                                 <p className="testimonial-text">"{t.text}"</p>
                                 <div className="testimonial-author">
+
                                     <img src={t.avatar || avatarFallback(t.name)} alt={t.name} className="avatar" />
+
                                     <div>
                                         <strong>{t.name}</strong>
                                         <span>{t.role}</span>
@@ -354,7 +362,9 @@ export default function HomePage() {
                     </div>
                 </div>
             </section>
+
             )}
+
 
             {/* ===== MEMBERSHIP ===== */}
             <section className="section membership-section" id="membership">

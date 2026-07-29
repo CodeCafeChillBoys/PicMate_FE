@@ -151,6 +151,7 @@ export const adminService = {
   getBookingDetail: (bookingId) =>
     http.get(`/api/admin/bookings/${bookingId}`).then((res) => res.data),
 
+
   // ── Đối soát thanh toán VietQR ─────────────────────────────────────────────
   /**
    * Danh sách giao dịch VietQR đang chờ admin đối soát.
@@ -175,4 +176,5 @@ export const adminService = {
    */
   verifyPayment: (paymentId, approved, note) =>
     http.post(`/api/admin/payments/${paymentId}/verify`, { approved, note }).then((res) => res.data),
+
 };

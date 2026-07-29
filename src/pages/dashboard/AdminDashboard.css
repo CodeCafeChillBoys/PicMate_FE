@@ -1130,6 +1130,7 @@
 
 .mini-table tbody tr:hover {
     background: var(--bg-tertiary);
+
 }
 /* ── Tab Đối soát VietQR ─────────────────────────────────────────────────── */
 
@@ -1162,3 +1163,4 @@
     display: flex;
     gap: 0.4rem;
 }
+

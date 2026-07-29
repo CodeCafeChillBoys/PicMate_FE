@@ -11,7 +11,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { adminService } from '../../services/adminService';
 import { formatPrice } from '../../data/data';
+
 import AdminReconciliationTab from './AdminReconciliationTab';
+
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
 
@@ -49,7 +51,9 @@ function EmptyRow({ cols = 7, message = 'Không có dữ liệu' }) {
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
+
     const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
+
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
     const [orderFilter, setOrderFilter] = useState('all');
@@ -374,7 +378,9 @@ export default function AdminDashboard() {
                                     badge: revenue?.pendingKycCount || pendingGraphers.length || null
                                 },
                                 { key: 'orders', icon: <Package size={18} />, label: 'Đơn hàng' },
+
                                 { key: 'reconciliation', icon: <CreditCard size={18} />, label: 'Đối soát', badge: pendingPaymentCount || null },
+
                                 { key: 'disputes', icon: <AlertTriangle size={18} />, label: 'Tranh chấp', badge: pendingDisputesCount || null },
                                 { key: 'settings', icon: <Settings size={18} />, label: 'Cài đặt hệ thống' },
                             ].map(item => (
@@ -1006,11 +1012,13 @@ export default function AdminDashboard() {
                             </>
                         )}
 
+
                         {/* ===== RECONCILIATION TAB ===== */}
                         <AdminReconciliationTab
                             active={activeTab === 'reconciliation'}
                             onPendingCountChange={setPendingPaymentCount}
                         />
+
 
                         {/* ===== SETTINGS TAB ===== */}
                         {activeTab === 'settings' && (

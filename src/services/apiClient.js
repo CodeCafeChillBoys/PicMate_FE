@@ -27,9 +27,11 @@ export const apiClient = {
   startBooking: (id) => http.post(`/api/bookings/${id}/start`).then(res => res.data),
   completeBooking: (id) => http.post(`/api/bookings/${id}/complete`).then(res => res.data),
   getBookingDetail: (id) => http.get(`/api/bookings/${id}/detail`).then(res => res.data),
+
   getVietQrPayment: (bookingId) => http.get(`/api/payments/${bookingId}/vietqr`).then(res => res.data),
   claimTransferred: (bookingId) => http.post(`/api/payments/${bookingId}/claim-transferred`).then(res => res.data),
   getPaymentStatus: (bookingId) => http.get(`/api/payments/${bookingId}/status`).then(res => res.data),
+
   getGrapherProfile: (id) => http.get(`/api/graphers/${id}`).then(res => res.data),
   getMyGrapherProfile: () => http.get('/api/graphers/me').then(res => res.data),
   setOnlineStatus: (isOnline) => http.put('/api/graphers/me/online', { isOnline }).then(res => res.data),

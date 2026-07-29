@@ -7,7 +7,10 @@ import {
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
+
 import { formatPrice, avatarFallback } from '../data/data';
+
+
 import { API_BASE_URL } from '../services/http';
 import ChatComponent from '../components/chat/ChatComponent';
 import toast from 'react-hot-toast';
@@ -174,6 +177,7 @@ export default function PhotographerProfile() {
                                 {(photographer.reviews?.length || 0) > 0 ? photographer.reviews.map(review => (
                                     <div key={review.id} className="review-card">
                                         <div className="review-header">
+
                                             <img src={review.avatar || avatarFallback(review.user)} alt={review.user} className="avatar" />
                                             <div>
                                                 <strong>{review.user}</strong>
@@ -182,6 +186,7 @@ export default function PhotographerProfile() {
                                                         day: '2-digit', month: '2-digit', year: 'numeric',
                                                     })}
                                                 </span>
+
                                             </div>
                                             <div className="review-stars">
                                                 {Array.from({ length: review.rating }).map((_, j) => (
