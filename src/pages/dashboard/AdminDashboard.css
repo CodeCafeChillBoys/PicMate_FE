@@ -1180,3 +1180,11 @@
 .quick-actions-card.admin-overview-quick .quick-action-btn {
     width: 100%;
 }
+
+/* dashboard-content là ô thứ hai của lưới dashboard-layout. Mặc định min-width: auto
+   khiến ô này bị nội dung rộng (bảng đơn hàng 9 cột) kéo giãn, đẩy cả trang tràn ngang.
+   Đặt min-width: 0 để ô co đúng phần được chia, phần dư do bảng tự cuộn ngang.
+   Khoanh trong .admin-dashboard để không ảnh hưởng dashboard khách hàng và thợ. */
+.admin-dashboard .dashboard-content {
+    min-width: 0;
+}

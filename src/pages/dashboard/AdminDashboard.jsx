@@ -14,6 +14,7 @@ import { formatPrice, avatarFallback } from '../../data/data';
 
 import AdminReconciliationTab from './AdminReconciliationTab';
 import AdminOverviewTab from './overview/AdminOverviewTab';
+import AdminOrdersTab from './orders/AdminOrdersTab';
 
 import toast from 'react-hot-toast';
 import './AdminDashboard.css';
@@ -57,7 +58,6 @@ export default function AdminDashboard() {
 
     const [userFilter, setUserFilter] = useState('all');
     const [userSearch, setUserSearch] = useState('');
-    const [orderFilter, setOrderFilter] = useState('all');
     const [disputeFilter, setDisputeFilter] = useState('all');
     const { logout } = useAuth();
     const { data } = useAppData();
@@ -79,8 +79,7 @@ export default function AdminDashboard() {
     const [activeGraphers, setActiveGraphers] = useState([]);
     const [graphersLoading, setGraphersLoading] = useState(false);
 
-    const [bookings, setBookings] = useState([]);
-    const [bookingsLoading, setBookingsLoading] = useState(false);
+    // Danh sách đơn hàng do AdminOrdersTab tự tải và tự lọc.
 
     const [disputes, setDisputes] = useState([]);
     const [disputesLoading, setDisputesLoading] = useState(false);
@@ -151,15 +150,6 @@ export default function AdminDashboard() {
         }
     }, [activeTab]);
 
-    useEffect(() => {
-        if (activeTab === 'orders') {
-            setBookingsLoading(true);
-            adminService.getAllBookings(orderFilter === 'all' ? '' : orderFilter)
-                .then(setBookings)
-                .catch(console.error)
-                .finally(() => setBookingsLoading(false));
-        }
-    }, [activeTab, orderFilter]);
 
     useEffect(() => {
         if (activeTab === 'disputes') {
@@ -677,89 +667,10 @@ export default function AdminDashboard() {
 
                         {/* ===== ORDERS TAB ===== */}
                         {activeTab === 'orders' && (
-                            <>
-                                <div className="dashboard-content-header">
-                                    <h2>Quản lý đơn hàng</h2>
-                                    <div className="order-summary-badges">
-                                        <span className="summary-badge">
-                                            <Package size={14} /> Tổng: <strong>{bookingsLoading ? '...' : bookings.length}</strong>
-                                        </span>
-                                        <span className="summary-badge revenue">
-                                            <DollarSign size={14} /> Doanh thu: <strong>
-                                                {bookingsLoading ? '...' : formatPrice(bookings.reduce((s, b) => s + (b.total || 0), 0))}
-                                            </strong>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="admin-filter-row">
-                                    {[
-                                        { key: 'all', label: 'Tất cả' },
-                                        { key: 'PendingPayment', label: 'Chờ thanh toán' },
-                                        { key: 'PendingConfirmation', label: 'Chờ xác nhận' },
-                                        { key: 'Confirmed', label: 'Đã xác nhận' },
-                                        { key: 'Completed', label: 'Hoàn thành' },
-                                        { key: 'Cancelled', label: 'Đã hủy' },
-                                    ].map(f => (
-                                        <button
-                                            key={f.key}
-                                            className={`order-filter-tab ${orderFilter === f.key ? 'active' : ''}`}
-                                            onClick={() => setOrderFilter(f.key)}
-                                        >
-                                            {f.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="admin-table-wrapper">
-                                    <table className="admin-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Mã đơn</th>
-                                                <th>Thợ chụp</th>
-                                                <th>Dịch vụ</th>
-                                                <th>Ngày</th>
-                                                <th>Địa điểm</th>
-                                                <th>Tổng tiền</th>
-                                                <th>Trạng thái</th>
-                                                <th>Hành động</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {bookingsLoading ? (
-                                                <LoadingRow cols={8} />
-                                            ) : bookings.length === 0 ? (
-                                                <EmptyRow cols={8} message="Không có đơn hàng nào" />
-                                            ) : bookings.map(b => (
-                                                <tr key={b.id}>
-                                                    <td><code className="order-code">{b.id.substring(0, 8)}...</code></td>
-                                                    <td>
-                                                        <div className="user-cell">
-                                                            <img src={b.photographerAvatar || avatarFallback(b.photographerName)} alt={b.photographerName} className="avatar" style={{ width: 28, height: 28 }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(b.photographerName); }} />
-                                                            <span>{b.photographerName}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>{b.service}</td>
-                                                    <td className="td-date">{b.date}</td>
-                                                    <td className="td-location">{b.location}</td>
-                                                    <td><strong className="td-price">{formatPrice(b.total)}</strong></td>
-                                                    <td>{getStatusBadge(b.status)}</td>
-                                                    <td>
-                                                        <div className="table-actions">
-                                                            <button className="table-action-btn" title="Xem chi tiết" onClick={() => handleViewBooking(b.id)}>
-                                                                <Eye size={15} />
-                                                            </button>
-                                                            <button className="table-action-btn" title="Thêm">
-                                                                <MoreHorizontal size={15} />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
+                            <AdminOrdersTab
+                                active
+                                onViewDetail={handleViewBooking}
+                            />
                         )}
 
                         {/* ===== DISPUTES TAB ===== */}

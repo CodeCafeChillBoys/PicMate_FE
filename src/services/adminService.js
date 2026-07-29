@@ -78,11 +78,37 @@ export const adminService = {
    * @param {string} [status] - 'PendingPayment' | 'Confirmed' | 'Completed' | 'Cancelled' | 'all'
    * @returns {Promise<AdminBookingResponse[]>}
    */
-  getAllBookings: (status = 'all') => {
+  /**
+   * Danh sách đơn hàng toàn hệ thống.
+   * @param {string} [status] - 'PendingPayment' | 'Confirmed' | 'Completed' | 'Cancelled' | 'all'
+   * @param {string} [from] - ngày bắt đầu dạng yyyy-MM-dd, tính theo giờ Việt Nam
+   * @param {string} [to] - ngày kết thúc dạng yyyy-MM-dd, bao trọn cả ngày này
+   * @returns {Promise<AdminBookingResponse[]>}
+   */
+  getAllBookings: (status = 'all', from = '', to = '') => {
     const params = {};
     if (status && status !== 'all') params.status = status;
+    if (from) params.from = from;
+    if (to) params.to = to;
     return http.get('/api/admin/bookings', { params }).then((res) => res.data);
   },
+
+  /**
+   * Admin đóng đơn thay thợ. Bị từ chối nếu đơn chưa thu được tiền.
+   * @param {string} bookingId
+   * @returns {Promise<AdminBookingDetailResponse>}
+   */
+  forceCompleteBooking: (bookingId) =>
+    http.post(`/api/admin/bookings/${bookingId}/complete`).then((res) => res.data),
+
+  /**
+   * Đánh dấu đơn đã hoàn tiền. Chỉ ghi nhận trạng thái, không tự chuyển tiền.
+   * @param {string} bookingId
+   * @param {string} [note] - lý do hoàn tiền
+   * @returns {Promise<AdminBookingDetailResponse>}
+   */
+  refundBooking: (bookingId, note) =>
+    http.post(`/api/admin/bookings/${bookingId}/refund`, { note }).then((res) => res.data),
 
   // ── Activities ─────────────────────────────────────────────────────────────
   /**
