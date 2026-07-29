@@ -18,7 +18,7 @@ export default function Footer() {
                         <div className="footer-socials">
                             <a href="https://www.facebook.com/profile.php?id=61590515463360" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="Facebook"><Facebook size={20} /></a>
                             <a href="mailto:picpls202@gmail.com" className="footer-social" aria-label="Email"><Mail size={20} /></a>
-                            <a href="https://www.tiktok.com/@picpls201/photo/7657074479125859602?_r=1&_t=ZS-97dTxsqNngG" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="TikTok" style={{ fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center' }}>TikTok</a>
+                            <a href="https://www.tiktok.com/@picpls201?_r=1&_t=ZS-98Qky9TJ9uy" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="TikTok" style={{ fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center' }}>TikTok</a>
                         </div>
                     </div>
 
@@ -32,10 +32,10 @@ export default function Footer() {
 
                     <div className="footer-col">
                         <h4>Hỗ trợ</h4>
-                        <a href="#">Câu hỏi thường gặp</a>
-                        <a href="#">Chính sách bảo mật</a>
-                        <a href="#">Điều khoản sử dụng</a>
-                        <a href="#">Chính sách hoàn tiền</a>
+                        <Link to="/faq">Câu hỏi thường gặp</Link>
+                        <Link to="/privacy">Chính sách bảo mật</Link>
+                        <Link to="/terms">Điều khoản sử dụng</Link>
+                        <Link to="/refund-policy">Chính sách hoàn tiền</Link>
                     </div>
 
                     <div className="footer-col">
