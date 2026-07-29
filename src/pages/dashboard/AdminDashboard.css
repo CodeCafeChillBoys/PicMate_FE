@@ -1188,3 +1188,9 @@
 .admin-dashboard .dashboard-content {
     min-width: 0;
 }
+
+/* Trang quản trị hiển thị bảng nhiều cột nên cần rộng hơn giới hạn 1280px
+   vốn dành cho các trang giới thiệu. Không đụng .container dùng chung. */
+.admin-dashboard .container {
+    max-width: 1600px;
+}

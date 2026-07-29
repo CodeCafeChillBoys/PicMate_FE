@@ -160,3 +160,20 @@
         flex-wrap: wrap;
     }
 }
+
+/* Bảng 9 cột với padding 1.5rem mỗi bên tiêu tốn hơn 400px chỉ cho khoảng trắng,
+   đẩy bảng vượt khung và khiến cột ghim che mất Thanh toán với Trạng thái.
+   Thu padding lại cho vừa khung ở màn hình phổ thông. */
+.orders-table th,
+.orders-table td {
+    padding: var(--space-md) var(--space-sm);
+}
+
+.orders-table th:first-child,
+.orders-table td:first-child {
+    padding-left: var(--space-lg);
+}
+
+.orders-table .td-date {
+    white-space: nowrap;
+}
