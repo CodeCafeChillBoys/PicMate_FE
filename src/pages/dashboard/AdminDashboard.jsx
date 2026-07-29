@@ -387,13 +387,11 @@ export default function AdminDashboard() {
 
                         {/* ===== OVERVIEW TAB ===== */}
                         {activeTab === 'overview' && (
-                            <>
-                                <AdminOverviewTab
-                                    active
-                                    activities={activities}
-                                    activitiesLoading={activitiesLoading}
-                                />
-
+                            <AdminOverviewTab
+                                active
+                                activities={activities}
+                                activitiesLoading={activitiesLoading}
+                                quickActions={(
                                     <div className="quick-actions-card admin-overview-quick">
                                         <div className="card-header-row">
                                             <h3>⚡ Hành động nhanh</h3>
@@ -431,7 +429,8 @@ export default function AdminDashboard() {
                                             </button>
                                         </div>
                                     </div>
-                            </>
+                                )}
+                            />
                         )}
 
                         {/* ===== USERS TAB ===== */}

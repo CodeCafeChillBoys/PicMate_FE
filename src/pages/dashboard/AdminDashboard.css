@@ -1165,7 +1165,18 @@
 }
 
 
-/* Khối "Hành động nhanh" đứng riêng sau khi tab Tổng quan được viết lại. */
+/* "Hành động nhanh" nằm trong cột phải của tab Tổng quan: bỏ chiều rộng tối thiểu
+   và cho các nút xếp dọc một cột để vừa cột hẹp. */
 .quick-actions-card.admin-overview-quick {
-    margin-top: 1.25rem;
+    margin: 0;
+}
+
+.quick-actions-card.admin-overview-quick .quick-actions-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quick-actions-card.admin-overview-quick .quick-action-btn {
+    width: 100%;
 }

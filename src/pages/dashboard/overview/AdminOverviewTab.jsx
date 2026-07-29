@@ -63,7 +63,11 @@ function KpiCard({ label, metric, caption, format, color }) {
     );
 }
 
-export default function AdminOverviewTab({ active, activities = [], activitiesLoading = false }) {
+/**
+ * @param {React.ReactNode} quickActions Khối "Hành động nhanh" do AdminDashboard dựng,
+ *   nhận vào đây để bố cục nằm cùng chỗ với phần còn lại của trang.
+ */
+export default function AdminOverviewTab({ active, activities = [], activitiesLoading = false, quickActions = null }) {
     const [range, setRange] = useState('30d');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -285,6 +289,8 @@ export default function AdminOverviewTab({ active, activities = [], activitiesLo
                                 ))}
                             </div>
                         </section>
+
+                        {quickActions}
                         </div>
                     </div>
                 </>
