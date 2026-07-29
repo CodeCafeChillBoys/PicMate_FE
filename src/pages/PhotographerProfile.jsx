@@ -95,7 +95,7 @@ export default function PhotographerProfile() {
                         {/* Header */}
                         <div className="profile-header">
                             <div className="profile-avatar-section">
-                                <img src={photographer.avatar} alt={photographer.name} className="profile-avatar" />
+                                <img src={photographer.avatar || avatarFallback(photographer.name)} alt={photographer.name} className="profile-avatar" />
                                 <div className="profile-info">
                                     <div className="profile-name-row">
                                         <h1>{photographer.name}</h1>

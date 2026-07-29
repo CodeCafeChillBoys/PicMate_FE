@@ -7,7 +7,7 @@ import {
 
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { formatPrice } from '../data/data';
+import { formatPrice, avatarFallback } from '../data/data';
 import { apiClient } from '../services/apiClient';
 import { API_BASE_URL } from '../services/http';
 import toast from 'react-hot-toast';
@@ -367,7 +367,7 @@ export default function BookingPage() {
                     <aside className="booking-sidebar">
                         <div className="booking-sidebar-card">
                             <div className="booking-photographer-info">
-                                <img src={photographer.avatar} alt={photographer.name} className="avatar-lg" />
+                                <img src={photographer.avatar || avatarFallback(photographer.name)} alt={photographer.name} className="avatar-lg" />
                                 <div>
                                     <h3>{photographer.name}</h3>
                                     <span className="photographer-card-location"><MapPin size={14} /> {photographer.location}</span>

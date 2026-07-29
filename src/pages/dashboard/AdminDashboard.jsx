@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useAppData } from '../../context/AppDataContext';
 import { adminService } from '../../services/adminService';
-import { formatPrice } from '../../data/data';
+import { formatPrice, avatarFallback } from '../../data/data';
 
 import AdminReconciliationTab from './AdminReconciliationTab';
 
@@ -110,6 +110,15 @@ export default function AdminDashboard() {
             .then(setActivities)
             .catch(console.error)
             .finally(() => setActivitiesLoading(false));
+
+        // Fetch counts for sidebar badges and landing quick actions
+        adminService.getPendingPayments()
+            .then(list => setPendingPaymentCount(list.length))
+            .catch(console.error);
+
+        adminService.getDisputes('Pending')
+            .then(setDisputes)
+            .catch(console.error);
     }, []);
 
     // ─── Fetch tab-specific data on tab switch ─────────────────────────────
@@ -691,10 +700,7 @@ export default function AdminDashboard() {
                                             {pendingGraphers.map(p => (
                                                 <div key={p.id} className="pending-card" id={`pending-${p.id}`}>
                                                     <div className="pending-info">
-                                                        {p.avatar
-                                                            ? <img src={p.avatar} alt={p.name} className="avatar" />
-                                                            : <div className="user-cell-avatar">{p.name.charAt(0)}</div>
-                                                        }
+                                                        <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(p.name); }} />
                                                         <div>
                                                             <strong>{p.name}</strong>
                                                             <span><MapPin size={12} /> {p.location || 'Chưa cập nhật'}</span>
@@ -754,10 +760,7 @@ export default function AdminDashboard() {
                                                     <tr key={p.id}>
                                                         <td>
                                                             <div className="user-cell">
-                                                                {p.avatar
-                                                                    ? <img src={p.avatar} alt={p.name} className="avatar" style={{ width: 32, height: 32 }} />
-                                                                    : <div className="user-cell-avatar">{(p.name || '?').charAt(0)}</div>
-                                                                }
+                                                                <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" style={{ width: 32, height: 32 }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(p.name); }} />
                                                                 <strong>{p.name}</strong>
                                                             </div>
                                                         </td>
@@ -769,7 +772,7 @@ export default function AdminDashboard() {
                                                                 <span className="review-count">({p.reviewCount})</span>
                                                             </div>
                                                         </td>
-                                                        <td className="td-num">{p.reviewCount}</td>
+                                                        <td className="td-num">{p.totalBookings}</td>
                                                         <td>
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                                 <span className={`badge ${p.isOnline ? 'badge-success' : 'badge-warning'}`}>
@@ -869,10 +872,7 @@ export default function AdminDashboard() {
                                                     <td><code className="order-code">{b.id.substring(0, 8)}...</code></td>
                                                     <td>
                                                         <div className="user-cell">
-                                                            {b.photographerAvatar
-                                                                ? <img src={b.photographerAvatar} alt={b.photographerName} className="avatar" style={{ width: 28, height: 28 }} />
-                                                                : <div className="user-cell-avatar" style={{ width: 28, height: 28, fontSize: 12 }}>{(b.photographerName || '?').charAt(0)}</div>
-                                                            }
+                                                            <img src={b.photographerAvatar || avatarFallback(b.photographerName)} alt={b.photographerName} className="avatar" style={{ width: 28, height: 28 }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(b.photographerName); }} />
                                                             <span>{b.photographerName}</span>
                                                         </div>
                                                     </td>
@@ -957,10 +957,7 @@ export default function AdminDashboard() {
 
                                                 <div className="dispute-parties">
                                                     <div className="dispute-party">
-                                                        {d.reporterAvatar
-                                                            ? <img src={d.reporterAvatar} alt={d.reporterName} className="avatar" />
-                                                            : <div className="user-cell-avatar">{(d.reporterName || '?').charAt(0)}</div>
-                                                        }
+                                                        <img src={d.reporterAvatar || avatarFallback(d.reporterName)} alt={d.reporterName} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(d.reporterName); }} />
                                                         <div>
                                                             <span className="party-role">Người báo cáo</span>
                                                             <strong>{d.reporterName}</strong>
@@ -968,10 +965,7 @@ export default function AdminDashboard() {
                                                     </div>
                                                     <span className="dispute-vs">VS</span>
                                                     <div className="dispute-party">
-                                                        {d.respondentAvatar
-                                                            ? <img src={d.respondentAvatar} alt={d.respondentName} className="avatar" />
-                                                            : <div className="user-cell-avatar">{(d.respondentName || '?').charAt(0)}</div>
-                                                        }
+                                                        <img src={d.respondentAvatar || avatarFallback(d.respondentName)} alt={d.respondentName} className="avatar" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(d.respondentName); }} />
                                                         <div>
                                                             <span className="party-role">Bị báo cáo</span>
                                                             <strong>{d.respondentName}</strong>
@@ -1249,7 +1243,7 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="admin-detail-grid">
                                 <div className="admin-detail-full" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <img src={viewGrapherModal.avatar || 'https://via.placeholder.com/80'} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
+                                    <img src={viewGrapherModal.avatar || avatarFallback(viewGrapherModal.name)} alt="avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = avatarFallback(viewGrapherModal.name); }} />
                                     <div>
                                         <h3 style={{ margin: '0 0 0.25rem 0' }}>{viewGrapherModal.name}</h3>
                                         <p style={{ margin: 0, color: 'var(--text-muted)' }}>{viewGrapherModal.location}</p>
