@@ -89,10 +89,23 @@
 
 /* ── Ô chỉ số ────────────────────────────────────────────────────────────── */
 
+/* Năm chỉ số nằm trên một hàng như thiết kế gốc; thu hẹp dần thay vì để lẻ một thẻ. */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 1rem;
+}
+
+@media (max-width: 1500px) {
+    .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+    .kpi-grid { grid-template-columns: 1fr; }
 }
 
 .kpi-card {
@@ -138,6 +151,7 @@
 
 .kpi-delta.up { color: #059669; }
 .kpi-delta.down { color: #dc2626; }
+.kpi-delta.flat { color: var(--text-muted, #9ca3af); }
 .kpi-delta.none { color: var(--text-muted, #9ca3af); cursor: help; }
 
 .kpi-caption {

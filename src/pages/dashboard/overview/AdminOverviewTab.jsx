@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Download, Loader2, TrendingUp, TrendingDown, Clock, RefreshCw, AlertTriangle,
+    Download, Loader2, TrendingUp, TrendingDown, Minus, Clock, RefreshCw, AlertTriangle,
 } from 'lucide-react';
 import { adminService } from '../../../services/adminService';
 import { formatPrice } from '../../../data/data';
@@ -38,7 +38,9 @@ const fmtRate = (v) => `${(Number(v) || 0).toFixed(1)}%`;
 function KpiCard({ label, metric, caption, format, color }) {
     const change = metric?.changePercent;
     const hasChange = change !== null && change !== undefined;
-    const isUp = hasChange && change >= 0;
+    // Bằng đúng kỳ trước thì không phải tăng cũng không phải giảm — đừng vẽ mũi tên lên.
+    const isFlat = hasChange && Number(change) === 0;
+    const isUp = hasChange && change > 0;
 
     return (
         <div className="kpi-card">
@@ -46,8 +48,8 @@ function KpiCard({ label, metric, caption, format, color }) {
             <strong className="kpi-value">{format(metric?.current ?? 0)}</strong>
             <div className="kpi-meta">
                 {hasChange ? (
-                    <span className={`kpi-delta ${isUp ? 'up' : 'down'}`}>
-                        {isUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                    <span className={`kpi-delta ${isFlat ? 'flat' : isUp ? 'up' : 'down'}`}>
+                        {isFlat ? <Minus size={13} /> : isUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                         {Math.abs(change).toFixed(1)}%
                     </span>
                 ) : (
