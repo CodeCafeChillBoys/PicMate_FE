@@ -7,6 +7,7 @@ import {
 import { adminService } from '../../../services/adminService';
 import { apiClient } from '../../../services/apiClient';
 import { formatPrice, avatarFallback } from '../../../data/data';
+import OrdersCharts from './OrdersCharts';
 import toast from 'react-hot-toast';
 import './AdminOrdersTab.css';
 
@@ -298,6 +299,8 @@ export default function AdminOrdersTab({ active, onViewDetail }) {
 
                 <div className="orders-date-filter">
                     <CalendarDays size={16} />
+                    {/* Nói rõ lọc theo mốc nào: cột trong bảng là ngày chụp, còn đây là ngày tạo đơn. */}
+                    <span className="orders-date-caption">Ngày tạo đơn</span>
                     <label className="sr-only" htmlFor="orders-from">Từ ngày</label>
                     <input
                         id="orders-from"
@@ -328,6 +331,8 @@ export default function AdminOrdersTab({ active, onViewDetail }) {
                     </button>
                 </div>
             </div>
+
+            {!loading && <OrdersCharts orders={orders} />}
 
             <div className="admin-table-wrapper">
                 <table className="admin-table orders-table">
