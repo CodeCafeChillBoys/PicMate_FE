@@ -98,55 +98,89 @@
     margin-bottom: var(--space-xl);
 }
 
-.service-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+.service-list {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-md);
 }
 
-.service-card {
+.service-row {
     position: relative;
-    padding: var(--space-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-xl);
     background: var(--bg-primary);
     border: 2px solid var(--border-light);
-    border-radius: var(--radius-xl);
-    text-align: center;
+    border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all var(--transition-base);
 }
 
-.service-card:hover {
+.service-row:hover {
     border-color: var(--primary-light);
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
-.service-card.active {
+.service-row.active {
     border-color: var(--primary);
     background: rgba(108, 92, 231, 0.04);
-    box-shadow: var(--shadow-primary);
 }
 
 .service-icon {
-    font-size: 2.5rem;
-    display: block;
-    margin-bottom: var(--space-md);
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
 }
 
-.service-card h3 {
+.service-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.service-details h3 {
     font-size: 1rem;
-    margin-bottom: var(--space-xs);
+    font-weight: 600;
+    margin: 0 0 2px 0;
+    color: var(--text-primary);
 }
 
-.service-card p {
+.service-details p {
     font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
 }
 
-.service-check {
-    position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
+.service-price-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.service-price {
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--primary);
+}
+
+.service-row-check-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.service-row-check {
+    transition: all 0.2s ease;
 }
 
 /* Time Grid */
@@ -371,8 +405,19 @@
         position: static;
     }
 
-    .service-grid {
-        grid-template-columns: 1fr;
+    .service-row {
+        padding: var(--space-md);
+        gap: var(--space-sm);
+    }
+
+    .service-icon {
+        font-size: 1.6rem;
+        width: 36px;
+        height: 36px;
+    }
+
+    .service-price {
+        font-size: 0.95rem;
     }
 
     .booking-stepper {

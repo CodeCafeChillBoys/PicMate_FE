@@ -39,6 +39,8 @@ export default function CustomerDashboard() {
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState('');
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [uploadedImages, setUploadedImages] = useState([]);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     // Dispute (khiếu nại) state
     const [showDisputeModal, setShowDisputeModal] = useState(false);
@@ -210,14 +212,39 @@ export default function CustomerDashboard() {
         setReviewOrder(order);
         setReviewRating(5);
         setReviewComment('');
+        setUploadedImages([]);
         setShowReviewModal(true);
+    };
+
+    const handleReviewImageUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        
+        setIsUploadingImage(true);
+        try {
+            const urls = [];
+            for (const file of files) {
+                const url = await apiClient.uploadImage(file);
+                urls.push(url);
+            }
+            setUploadedImages(prev => [...prev, ...urls].slice(0, 5));
+            toast.success('Tải hình ảnh lên thành công!');
+        } catch (err) {
+            toast.error(err.message || 'Lỗi tải ảnh lên');
+        } finally {
+            setIsUploadingImage(false);
+        }
     };
 
     const handleSubmitReview = async () => {
         if (!reviewOrder) return;
         try {
             setIsSubmittingReview(true);
-            await apiClient.createReview(reviewOrder.id, { rating: reviewRating, comment: reviewComment });
+            await apiClient.createReview(reviewOrder.id, { 
+                rating: reviewRating, 
+                comment: reviewComment.trim(), 
+                imageUrls: uploadedImages.length > 0 ? uploadedImages.join(',') : null 
+            });
             setOrders(prev => prev.map(o => o.id === reviewOrder.id ? { ...o, hasReview: true } : o));
             toast.success('Cảm ơn bạn đã đánh giá!');
             setShowReviewModal(false);
@@ -942,6 +969,44 @@ export default function CustomerDashboard() {
                                 onChange={(e) => setReviewComment(e.target.value)}
                                 disabled={isSubmittingReview}
                             />
+                        </div>
+
+                        <div className="input-group" style={{ marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Hình ảnh thực tế (nếu có)</label>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {uploadedImages.map((url, index) => (
+                                    <div key={index} style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                        <img src={url} alt="Uploaded review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
+                                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', padding: 0 }}
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {uploadedImages.length < 5 && (
+                                    <label style={{ width: '64px', height: '64px', borderRadius: '6px', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: isUploadingImage ? 'not-allowed' : 'pointer', color: 'var(--text-secondary)' }}>
+                                        {isUploadingImage ? (
+                                            <span style={{ fontSize: '0.65rem' }}>Đang tải...</span>
+                                        ) : (
+                                            <>
+                                                <Upload size={20} />
+                                                <span style={{ fontSize: '0.65rem', marginTop: '2px' }}>Tải ảnh</span>
+                                            </>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            multiple 
+                                            onChange={handleReviewImageUpload} 
+                                            style={{ display: 'none' }} 
+                                            disabled={isUploadingImage}
+                                        />
+                                    </label>
+                                )}
+                            </div>
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>

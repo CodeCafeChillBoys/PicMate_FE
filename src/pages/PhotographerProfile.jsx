@@ -45,6 +45,7 @@ export default function PhotographerProfile() {
     };
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         const fetchProfile = async () => {
             try {
                 const response = await fetch(`${API_BASE_URL}/api/graphers/${id}`);
@@ -175,26 +176,62 @@ export default function PhotographerProfile() {
                         {activeTab === 'reviews' && (
                             <div className="profile-reviews">
                                 {(photographer.reviews?.length || 0) > 0 ? photographer.reviews.map(review => (
-                                    <div key={review.id} className="review-card">
-                                        <div className="review-header">
-
-                                            <img src={review.avatar || avatarFallback(review.user)} alt={review.user} className="avatar" />
-                                            <div>
-                                                <strong>{review.user}</strong>
-                                                <span className="review-date">
-                                                    {new Date(review.createdAt).toLocaleDateString('vi-VN', {
-                                                        day: '2-digit', month: '2-digit', year: 'numeric',
-                                                    })}
-                                                </span>
-
-                                            </div>
-                                            <div className="review-stars">
-                                                {Array.from({ length: review.rating }).map((_, j) => (
-                                                    <Star key={j} size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />
+                                    <div key={review.id} className="shopee-review-card">
+                                        <img src={review.avatar || avatarFallback(review.user)} alt={review.user} className="shopee-review-avatar" />
+                                        <div className="shopee-review-content">
+                                            <div className="shopee-review-username">{review.user}</div>
+                                            <div className="shopee-review-stars">
+                                                {Array.from({ length: 5 }).map((_, j) => (
+                                                    <Star 
+                                                        key={j} 
+                                                        size={12} 
+                                                        fill={j < review.rating ? "#ee4d2d" : "none"} 
+                                                        color={j < review.rating ? "#ee4d2d" : "#dbdbdb"} 
+                                                    />
                                                 ))}
                                             </div>
+                                            <div className="shopee-review-meta">
+                                                {new Date(review.createdAt).toLocaleDateString('vi-VN', {
+                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                })} {new Date(review.createdAt).toLocaleTimeString('vi-VN', {
+                                                    hour: '2-digit', minute: '2-digit'
+                                                })} | Phân loại dịch vụ: {review.packageName || 'Chụp ảnh ngoại cảnh'}
+                                            </div>
+                                            
+                                            <p className="shopee-review-text">{review.text || 'Đánh giá dịch vụ rất tốt, thợ thân thiện, hình ảnh nhận về rất ưng ý!'}</p>
+                                            {review.imageUrls ? (
+                                                <div className="shopee-review-thumbnails">
+                                                    {review.imageUrls.split(',').map((img, idx) => (
+                                                        <div key={idx} className="shopee-review-thumb-wrapper" onClick={() => setSelectedImage(img)}>
+                                                            <img src={img} alt={`review-thumb-${idx}`} />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                photographer.portfolio && photographer.portfolio.length > 0 && (
+                                                    <div className="shopee-review-thumbnails">
+                                                        {photographer.portfolio.slice(0, 3).map((img, idx) => (
+                                                            <div key={idx} className="shopee-review-thumb-wrapper" onClick={() => setSelectedImage(img)}>
+                                                                <img src={img} alt={`review-thumb-${idx}`} />
+                                                                {idx === 0 && (
+                                                                    <div className="shopee-thumb-video-badge">
+                                                                        <span className="play-icon">▶</span>
+                                                                        <span>0:12</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )
+                                            )}
+
+                                            <div className="shopee-review-like">
+                                                <button className="shopee-like-btn">
+                                                    <span className="like-icon">👍</span>
+                                                    <span>{review.rating >= 4 ? 2 : 1}</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p>{review.text}</p>
                                     </div>
                                 )) : (
                                     <div className="profile-empty">

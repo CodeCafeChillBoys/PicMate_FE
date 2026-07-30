@@ -166,19 +166,32 @@ export default function BookingPage() {
                             <div className="booking-step animate-fade-in-up">
                                 <h2>Chọn dịch vụ</h2>
                                 {services.length > 0 ? (
-                                    <div className="service-grid">
+                                    <div className="service-list">
                                         {services.map(s => (
                                             <div
                                                 key={s.id}
-                                                className={`service-card ${booking.service === s.name ? 'active' : ''}`}
+                                                className={`service-row ${booking.service === s.name ? 'active' : ''}`}
                                                 onClick={() => updateBooking('service', s.name)}
                                                 id={`service-${s.id}`}
                                             >
                                                 <span className="service-icon">{s.icon}</span>
-                                                <h3>{s.name}</h3>
-                                                <p>{s.description}</p>
-                                                <strong style={{ color: 'var(--primary)', marginTop: '0.5rem', display: 'block' }}>{formatPrice(s.price)}</strong>
-                                                {booking.service === s.name && <CheckCircle size={20} className="service-check" />}
+                                                <div className="service-details">
+                                                    <h3>{s.name}</h3>
+                                                    <p>{s.description}</p>
+                                                </div>
+                                                <div className="service-price-wrapper">
+                                                    <strong className="service-price">{formatPrice(s.price)}</strong>
+                                                    <div className="service-row-check-wrapper">
+                                                        <CheckCircle 
+                                                            size={20} 
+                                                            className="service-row-check" 
+                                                            style={{ 
+                                                                opacity: booking.service === s.name ? 1 : 0.15,
+                                                                color: booking.service === s.name ? 'var(--primary)' : 'var(--text-muted)'
+                                                            }} 
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
