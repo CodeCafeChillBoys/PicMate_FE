@@ -130,7 +130,7 @@ export function PrivacyPolicyPage() {
                 <div className="container">
                     <Shield size={48} className="support-icon" />
                     <h1>Chính sách bảo mật</h1>
-                    <p>Cập nhật lần cuối: 01/07/2025</p>
+                    <p>Cập nhật lần cuối: 01/07/2026</p>
                 </div>
             </div>
             <div className="container support-content">
@@ -213,7 +213,7 @@ export function TermsPage() {
                 <div className="container">
                     <FileText size={48} className="support-icon" />
                     <h1>Điều khoản sử dụng</h1>
-                    <p>Cập nhật lần cuối: 01/07/2025</p>
+                    <p>Cập nhật lần cuối: 01/07/2026</p>
                 </div>
             </div>
             <div className="container support-content">
@@ -297,7 +297,7 @@ export function RefundPolicyPage() {
                 <div className="container">
                     <RefreshCw size={48} className="support-icon" />
                     <h1>Chính sách hoàn tiền</h1>
-                    <p>Cập nhật lần cuối: 01/07/2025</p>
+                    <p>Cập nhật lần cuối: 01/07/2026</p>
                 </div>
             </div>
             <div className="container support-content">

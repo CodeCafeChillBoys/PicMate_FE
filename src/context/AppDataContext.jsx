@@ -3,11 +3,54 @@ import { apiClient } from '../services/apiClient';
 
 const AppDataContext = createContext(null);
 
+const DEFAULT_PRESETS = [
+  {
+    id: 'p1',
+    name: 'Golden Hour Sunset',
+    category: 'Warm',
+    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80',
+    rating: 4.9,
+    downloads: '12.5K',
+    price: 49000
+  },
+  {
+    id: 'p2',
+    name: 'Korean Tone & Glow',
+    category: 'Da sáng Hàn',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80',
+    rating: 5.0,
+    downloads: '8.2K',
+    price: 69000
+  },
+  {
+    id: 'p3',
+    name: 'Vintage Film 1998',
+    category: 'Ngoài trời',
+    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80',
+    rating: 4.8,
+    downloads: '15.1K',
+    price: 59000
+  },
+  {
+    id: 'p4',
+    name: 'Moody Dark Cafe',
+    category: 'Cafe',
+    image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&auto=format&fit=crop&q=80',
+    rating: 4.7,
+    downloads: '6.8K',
+    price: 39000
+  }
+];
+
 const defaultData = {
   photographers: [],
   services: [],
   styles: [],
-  presets: [],
+  presets: DEFAULT_PRESETS,
   bookings: [],
   bookingStatuses: [],
   demoAccounts: [],
@@ -16,6 +59,24 @@ const defaultData = {
   mockMessages: [],
   favoritePhotographerIds: [],
   stats: null,
+};
+
+const normalizePresets = (rawPresets) => {
+  let list = Array.isArray(rawPresets) && rawPresets.length > 0 ? [...rawPresets] : [];
+  list = list.map(p => ({
+    ...p,
+    image: p.image || p.imageUrl || DEFAULT_PRESETS[0].image,
+    imageUrl: p.imageUrl || p.image || DEFAULT_PRESETS[0].imageUrl,
+    downloads: p.downloads || p.downloadCount || '1.2K'
+  }));
+  if (list.length < 4) {
+    DEFAULT_PRESETS.forEach(def => {
+      if (list.length < 4 && !list.some(item => item.id === def.id || item.name === def.name)) {
+        list.push(def);
+      }
+    });
+  }
+  return list;
 };
 
 export function AppDataProvider({ children }) {
@@ -29,7 +90,8 @@ export function AppDataProvider({ children }) {
       .then((res) => {
         if (isMounted && res && Object.keys(res).length) {
           console.info('Bootstrap data loaded from API:', res);
-          setData((prev) => ({ ...prev, ...res }));
+          const presets = normalizePresets(res.presets);
+          setData((prev) => ({ ...prev, ...res, presets }));
           setError(null);
         }
       })
@@ -41,7 +103,8 @@ export function AppDataProvider({ children }) {
             const fallbackRes = await fetch('/bootstrap.json');
             if (fallbackRes.ok) {
               const fallback = await fallbackRes.json();
-              setData((prev) => ({ ...prev, ...fallback }));
+              const presets = normalizePresets(fallback.presets);
+              setData((prev) => ({ ...prev, ...fallback, presets }));
               setError(null);
               console.info('Loaded bootstrap data from local fallback');
             } else {

@@ -60,7 +60,7 @@ export default function Footer() {
                 </div>
 
                 <div className="footer-bottom">
-                    <p>© 2025 PIC PLS. Made with <Heart size={14} className="footer-heart" /> in Vietnam</p>
+                    <p>© 2026 PIC PLS. Made with <Heart size={14} className="footer-heart" /> in Vietnam</p>
                 </div>
             </div>
         </footer>
