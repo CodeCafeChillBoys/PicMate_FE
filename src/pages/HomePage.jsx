@@ -11,16 +11,13 @@ import { formatPrice, avatarFallback } from '../data/data';
 import './HomePage.css';
 
 export default function HomePage() {
-    const [activeStyle, setActiveStyle] = useState(null);
-
     const [searchQuery, setSearchQuery] = useState('');
     const { data } = useAppData();
     
     const photographers = data.photographers || [];
-    const styles = data.styles || [];
-    const testimonials = data.testimonials || [];
     const presets = data.presets || [];
     const membershipPlans = data.membershipPlans || [];
+    const stats = data.stats || { totalGraphers: 120, totalPhotos: 1500, averageRating: 4.9 };
 
     return (
         <div className="home-page">
@@ -74,17 +71,17 @@ export default function HomePage() {
                         </div>
                         <div className="hero-stats">
                             <div className="hero-stat">
-                                <strong>2,500+</strong>
+                                <strong>{stats.totalGraphers.toLocaleString('vi-VN')}+</strong>
                                 <span>Phone Graphers</span>
                             </div>
                             <div className="hero-stat-divider" />
                             <div className="hero-stat">
-                                <strong>50,000+</strong>
+                                <strong>{stats.totalPhotos.toLocaleString('vi-VN')}+</strong>
                                 <span>Ảnh đã chụp</span>
                             </div>
                             <div className="hero-stat-divider" />
                             <div className="hero-stat">
-                                <strong>4.9 ⭐</strong>
+                                <strong>{Number(stats.averageRating).toFixed(1)} ⭐</strong>
                                 <span>Đánh giá TB</span>
                             </div>
                         </div>
@@ -199,34 +196,7 @@ export default function HomePage() {
             </section>
 
 
-            {/* ===== STYLE TAGS ===== */}
-            <section className="section styles-section" id="style-tags">
-                <div className="container">
-                    <div className="section-header">
-                        <span className="section-label">Phong cách</span>
-                        <h2>Chọn phong cách <span className="gradient-text">yêu thích</span></h2>
-                        <p>Từ Hàn Quốc minimal đến vintage cá tính – tìm Phone Grapher phù hợp với gu của bạn.</p>
-                    </div>
-                    <div className="styles-grid">
-                        {styles.map((style, i) => (
-                            <Link
-                                to={`/explore?style=${style.name}`}
-                                key={style.id}
-                                className={`style-card ${activeStyle === style.id ? 'active' : ''}`}
-                                id={`style-card-${style.id}`}
-                                onMouseEnter={() => setActiveStyle(style.id)}
-                                onMouseLeave={() => setActiveStyle(null)}
-                                style={{ animationDelay: `${i * 0.1}s` }}
-                            >
-                                <span className="style-emoji">{style.emoji}</span>
-                                <h3>{style.name}</h3>
-                                <span className="style-count">{photographers.filter(p => p.styles.includes(style.name)).length}+ thợ</span>
-                                <div className="style-card-glow" style={{ background: style.color }} />
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            </section>
+
 
 
             {/* ===== INSTANT BOOKING ===== */}
@@ -327,43 +297,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ===== TESTIMONIALS ===== */}
 
-            {/* Chưa có review nào đạt chuẩn thì ẩn hẳn, tránh tiêu đề trống trơ trọi. */}
-            {testimonials.length > 0 && (
-
-            <section className="section testimonials-section" id="testimonials">
-                <div className="container">
-                    <div className="section-header">
-                        <span className="section-label">Đánh giá</span>
-                        <h2>Khách hàng <span className="gradient-text">nói gì?</span></h2>
-                        <p>Hàng ngàn review thật từ cộng đồng PICMate.</p>
-                    </div>
-                    <div className="testimonials-grid">
-                        {testimonials.map((t, i) => (
-                            <div key={t.id} className="testimonial-card card-glass" style={{ animationDelay: `${i * 0.15}s` }}>
-                                <div className="testimonial-stars">
-                                    {Array.from({ length: t.rating }).map((_, j) => (
-                                        <Star key={j} size={16} fill="var(--accent-gold)" color="var(--accent-gold)" />
-                                    ))}
-                                </div>
-                                <p className="testimonial-text">"{t.text}"</p>
-                                <div className="testimonial-author">
-
-                                    <img src={t.avatar || avatarFallback(t.name)} alt={t.name} className="avatar" />
-
-                                    <div>
-                                        <strong>{t.name}</strong>
-                                        <span>{t.role}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            )}
 
 
             {/* ===== MEMBERSHIP ===== */}

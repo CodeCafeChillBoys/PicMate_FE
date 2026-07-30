@@ -15,6 +15,7 @@ const defaultData = {
   membershipPlans: [],
   mockMessages: [],
   favoritePhotographerIds: [],
+  stats: null,
 };
 
 export function AppDataProvider({ children }) {
