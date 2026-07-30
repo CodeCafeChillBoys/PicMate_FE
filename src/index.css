@@ -497,14 +497,24 @@ input, textarea, select {
   background-clip: text;
 }
 
-/* ===== Responsive ===== */
+/* ===== Responsive & Touch Adaptations ===== */
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 var(--space-lg);
+  }
+
+  .section {
+    padding: var(--space-3xl) 0;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0 var(--space-md);
   }
 
   .section {
-    padding: var(--space-3xl) 0;
+    padding: var(--space-2xl) 0;
   }
 
   .section-header {
@@ -512,15 +522,29 @@ input, textarea, select {
   }
 
   .btn-lg {
-    padding: 0.85rem 1.75rem;
+    padding: 0.85rem 1.5rem;
     font-size: 0.95rem;
+    width: 100%;
+  }
+
+  /* Ensure touch targets have adequate size */
+  button, .btn, a, input, select {
+    min-height: 44px;
   }
 }
 
 @media (max-width: 480px) {
-  .section {
-    padding: var(--space-2xl) 0;
+  .container {
+    padding: 0 0.85rem;
   }
+
+  .section {
+    padding: var(--space-xl) 0;
+  }
+
+  h1 { font-size: 1.85rem; }
+  h2 { font-size: 1.45rem; }
+  h3 { font-size: 1.2rem; }
 }
 
 /* ===== Scrollbar ===== */

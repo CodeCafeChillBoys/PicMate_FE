@@ -43,12 +43,26 @@
     gap: var(--space-xl);
 }
 
+@media (max-width: 992px) {
+    .preset-shop-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .preset-shop-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .preset-shop-card {
     background: var(--bg-primary);
     border-radius: var(--radius-xl);
     overflow: hidden;
     border: 1px solid var(--border-light);
     transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
 }
 
 .preset-shop-card:hover {
@@ -58,8 +72,9 @@
 
 .preset-shop-card-img {
     position: relative;
-    height: 320px;
+    height: 260px;
     overflow: hidden;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.15) 0%, rgba(162, 155, 254, 0.15) 100%);
 }
 
 .preset-shop-card-img img {

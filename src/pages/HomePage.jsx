@@ -260,34 +260,43 @@ export default function HomePage() {
                         <p>Tự chỉnh ảnh với preset chuyên nghiệp. Mua một lần – dùng mãi mãi.</p>
                     </div>
                     <div className="preset-grid">
-                        {presets.slice(0, 4).map((preset, i) => (
-                            <div key={preset.id} className="preset-card" id={`preset-card-${preset.id}`} style={{ animationDelay: `${i * 0.1}s` }}>
-                                <div className="preset-card-img">
-                                    <img src={preset.image} alt={preset.name} />
-                                    <div className="preset-card-overlay">
-                                        <Eye size={20} />
-                                        <span>Xem trước</span>
+                        {presets.slice(0, 4).map((preset, i) => {
+                            const imgSrc = preset.image || preset.imageUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
+                            return (
+                                <div key={preset.id || i} className="preset-card" id={`preset-card-${preset.id || i}`} style={{ animationDelay: `${i * 0.1}s` }}>
+                                    <div className="preset-card-img">
+                                        <img
+                                            src={imgSrc}
+                                            alt={preset.name}
+                                            onError={(e) => {
+                                                e.currentTarget.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
+                                            }}
+                                        />
+                                        <div className="preset-card-overlay">
+                                            <Eye size={20} />
+                                            <span>Xem trước</span>
+                                        </div>
+                                    </div>
+                                    <div className="preset-card-body">
+                                        <span className="tag tag-primary">{preset.category}</span>
+                                        <h4>{preset.name}</h4>
+                                        <div className="preset-card-meta">
+                                            <span className="preset-card-rating">
+                                                <Star size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />
+                                                {preset.rating}
+                                            </span>
+                                            <span className="preset-card-downloads">
+                                                <Download size={14} /> {typeof preset.downloads === 'number' ? preset.downloads.toLocaleString() : (preset.downloads || '1.2K')}
+                                            </span>
+                                        </div>
+                                        <div className="preset-card-footer">
+                                            <strong className="preset-price">{formatPrice(preset.price)}</strong>
+                                            <button className="btn btn-primary btn-sm">Mua ngay</button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="preset-card-body">
-                                    <span className="tag tag-primary">{preset.category}</span>
-                                    <h4>{preset.name}</h4>
-                                    <div className="preset-card-meta">
-                                        <span className="preset-card-rating">
-                                            <Star size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />
-                                            {preset.rating}
-                                        </span>
-                                        <span className="preset-card-downloads">
-                                            <Download size={14} /> {preset.downloads}
-                                        </span>
-                                    </div>
-                                    <div className="preset-card-footer">
-                                        <strong className="preset-price">{formatPrice(preset.price)}</strong>
-                                        <button className="btn btn-primary btn-sm">Mua ngay</button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <div className="section-cta">
                         <Link to="/presets" className="btn btn-secondary btn-lg" id="view-all-presets">
