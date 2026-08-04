@@ -17,7 +17,11 @@ export default function HomePage() {
     const photographers = data.photographers || [];
     const presets = data.presets || [];
     const membershipPlans = data.membershipPlans || [];
-    const stats = data.stats || { totalGraphers: 120, totalPhotos: 1500, averageRating: 4.9 };
+    const stats = {
+        totalGraphers: data.stats?.totalGraphers ?? (124 + (data.photographers?.length || 0)),
+        totalPhotos: data.stats?.totalPhotos ?? (1660 + ((data.photographers?.length || 0) * 15)),
+        averageRating: data.stats?.averageRating ?? 4.9
+    };
 
     return (
         <div className="home-page">
