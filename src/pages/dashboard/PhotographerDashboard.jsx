@@ -216,15 +216,18 @@ export default function PhotographerDashboard() {
     };
 
     const handleFileUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
         try {
             setIsUploading(true);
-            const url = await apiClient.uploadImage(file);
+            const newUrls = [];
+            for (const file of files) {
+                const url = await apiClient.uploadImage(file);
+                newUrls.push(url);
+            }
             
-            // Re-use logic from handleAddPortfolio but with new url
-            const updatedPortfolio = [...portfolio, url];
+            const updatedPortfolio = [...portfolio, ...newUrls];
             const payload = {
                 bio: grapherProfile?.bio || '',
                 location: grapherProfile?.location || '',
@@ -240,7 +243,7 @@ export default function PhotographerDashboard() {
             };
             await http.put('/api/graphers/me', payload);
             setPortfolio(updatedPortfolio);
-            toast.success('Tải ảnh lên thành công!');
+            toast.success(`Đã tải ${newUrls.length} ảnh lên thành công!`);
         } catch (err) {
             toast.error('Lỗi khi tải ảnh lên: ' + (err.response?.data?.Error || err.response?.data?.title || err.message));
         } finally {
@@ -749,13 +752,14 @@ export default function PhotographerDashboard() {
                                         <div style={{ position: 'relative' }}>
                                             <input 
                                                 type="file" 
-                                                accept="image/jpeg, image/png, image/webp"
+                                                accept="image/*"
+                                                multiple
                                                 onChange={handleFileUpload}
                                                 style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', left: 0, top: 0 }}
                                                 disabled={isUploading}
                                             />
                                             <button className="btn btn-primary" disabled={isUploading}>
-                                                {isUploading ? 'Đang tải...' : 'Tải ảnh từ máy tính'}
+                                                {isUploading ? 'Đang tải...' : 'Tải ảnh từ thiết bị'}
                                             </button>
                                         </div>
                                         <span>hoặc</span>

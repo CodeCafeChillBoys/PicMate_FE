@@ -233,6 +233,7 @@ export default function CustomerDashboard() {
             toast.error(err.message || 'Lỗi tải ảnh lên');
         } finally {
             setIsUploadingImage(false);
+            e.target.value = null;
         }
     };
 
