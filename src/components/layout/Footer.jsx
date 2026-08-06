@@ -48,7 +48,7 @@ export default function Footer() {
                     <div className="footer-col">
                         <h4>Ứng dụng</h4>
                         {/* Thay đổi href thành tên file APK bạn đã copy vào thư mục public */}
-                        <a href="/picmate.apk" download className="app-download-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <a href="/PicPls.apk" download className="app-download-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Download size={16} /> Tải App (APK)
                         </a>
                     </div>
