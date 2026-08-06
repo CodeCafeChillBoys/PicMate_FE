@@ -233,6 +233,7 @@ export default function CustomerDashboard() {
             toast.error(err.message || 'Lỗi tải ảnh lên');
         } finally {
             setIsUploadingImage(false);
+            e.target.value = null;
         }
     };
 
@@ -700,7 +701,7 @@ export default function CustomerDashboard() {
                                         <div className="profile-avatar-info">
                                             <h3>{user?.name || 'Nguyễn Văn Khách'}</h3>
                                             <span className="badge badge-info">Premium Member</span>
-                                            <p>Thành viên từ tháng 01/2025</p>
+                                            <p>Thành viên từ tháng 01/2026</p>
                                         </div>
                                     </div>
 

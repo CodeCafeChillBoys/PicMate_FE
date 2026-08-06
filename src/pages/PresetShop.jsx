@@ -39,37 +39,46 @@ export default function PresetShop() {
                 </div>
 
                 <div className="preset-shop-grid">
-                    {filtered.map((preset, i) => (
-                        <div key={preset.id} className="preset-shop-card" id={`preset-shop-${preset.id}`}>
-                            <div className="preset-shop-card-img">
-                                <img src={preset.image} alt={preset.name} />
-                                <div className="preset-shop-card-overlay">
-                                    <button className="btn btn-primary btn-sm">
-                                        <Eye size={16} /> Xem trước
-                                    </button>
+                    {filtered.map((preset, i) => {
+                        const imgSrc = preset.image || preset.imageUrl || 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
+                        return (
+                            <div key={preset.id || i} className="preset-shop-card" id={`preset-shop-${preset.id || i}`}>
+                                <div className="preset-shop-card-img">
+                                    <img
+                                        src={imgSrc}
+                                        alt={preset.name}
+                                        onError={(e) => {
+                                            e.currentTarget.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
+                                        }}
+                                    />
+                                    <div className="preset-shop-card-overlay">
+                                        <button className="btn btn-primary btn-sm">
+                                            <Eye size={16} /> Xem trước
+                                        </button>
+                                    </div>
+                                    <span className="preset-shop-category tag tag-primary">{preset.category}</span>
                                 </div>
-                                <span className="preset-shop-category tag tag-primary">{preset.category}</span>
+                                <div className="preset-shop-card-body">
+                                    <h3>{preset.name}</h3>
+                                    <div className="preset-shop-meta">
+                                        <span className="preset-shop-rating">
+                                            <Star size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />
+                                            {preset.rating}
+                                        </span>
+                                        <span className="preset-shop-downloads">
+                                            <Download size={14} /> {typeof preset.downloads === 'number' ? preset.downloads.toLocaleString() : (preset.downloads || '1.2K')}
+                                        </span>
+                                    </div>
+                                    <div className="preset-shop-card-footer">
+                                        <strong className="preset-shop-price">{formatPrice(preset.price)}</strong>
+                                        <button className="btn btn-primary btn-sm" id={`buy-preset-${preset.id || i}`}>
+                                            <ShoppingCart size={14} /> Mua ngay
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="preset-shop-card-body">
-                                <h3>{preset.name}</h3>
-                                <div className="preset-shop-meta">
-                                    <span className="preset-shop-rating">
-                                        <Star size={14} fill="var(--accent-gold)" color="var(--accent-gold)" />
-                                        {preset.rating}
-                                    </span>
-                                    <span className="preset-shop-downloads">
-                                        <Download size={14} /> {preset.downloads.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div className="preset-shop-card-footer">
-                                    <strong className="preset-shop-price">{formatPrice(preset.price)}</strong>
-                                    <button className="btn btn-primary btn-sm" id={`buy-preset-${preset.id}`}>
-                                        <ShoppingCart size={14} /> Mua ngay
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>
