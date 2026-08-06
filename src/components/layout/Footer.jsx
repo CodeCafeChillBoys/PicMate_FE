@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Camera, Instagram, Facebook, Mail, Phone, MapPin, Heart } from 'lucide-react';
+import { Camera, Instagram, Facebook, Mail, Phone, MapPin, Heart, Download } from 'lucide-react';
 import './Footer.css';
 
 export default function Footer() {
@@ -19,7 +19,11 @@ export default function Footer() {
                             <a href="https://www.facebook.com/profile.php?id=61590515463360" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="Facebook"><Facebook size={20} /></a>
                             <a href="mailto:picpls202@gmail.com" className="footer-social" aria-label="Email"><Mail size={20} /></a>
 
-                            <a href="https://www.tiktok.com/@picpls201?_r=1&_t=ZS-98Qky9TJ9uy" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="TikTok" style={{ fontWeight: 'bold', fontSize: '12px', display: 'flex', alignItems: 'center' }}>TikTok</a>
+                            <a href="https://www.tiktok.com/@picpls201?_r=1&_t=ZS-98Qky9TJ9uy" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="TikTok">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                                </svg>
+                            </a>
 
                         </div>
                     </div>
@@ -39,7 +43,14 @@ export default function Footer() {
                         <Link to="/privacy">Chính sách bảo mật</Link>
                         <Link to="/terms">Điều khoản sử dụng</Link>
                         <Link to="/refund-policy">Chính sách hoàn tiền</Link>
+                    </div>
 
+                    <div className="footer-col">
+                        <h4>Ứng dụng</h4>
+                        {/* Thay đổi href thành tên file APK bạn đã copy vào thư mục public */}
+                        <a href="/picmate.apk" download className="app-download-link" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Download size={16} /> Tải App (APK)
+                        </a>
                     </div>
 
                     <div className="footer-col">
