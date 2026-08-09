@@ -1,0 +1,229 @@
+.application-page {
+    padding: 2rem 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+    min-height: calc(100vh - 100px);
+}
+
+.application-page.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    gap: 1rem;
+}
+
+.application-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.application-header h1 {
+    font-size: 2rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.application-header p {
+    color: var(--text-muted);
+}
+
+.pending-state-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 600px;
+    margin: 4rem auto;
+}
+
+.pending-icon {
+    width: 96px;
+    height: 96px;
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pending-state-card h2 {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.alert-danger {
+    background: rgba(255, 107, 107, 0.1);
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    color: var(--danger-color);
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.alert-danger h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--danger-color);
+}
+
+.alert-danger p {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-color);
+}
+
+.application-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-section {
+    background: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.form-section h3 {
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.required {
+    color: var(--danger-color);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.upload-zone {
+    position: relative;
+    width: 100%;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: var(--text-muted);
+}
+
+.upload-label:hover {
+    border-color: var(--primary);
+    background: rgba(108, 92, 231, 0.05);
+    color: var(--primary);
+}
+
+.upload-label.has-file {
+    border-color: var(--success-color);
+    background: rgba(0, 184, 148, 0.05);
+    color: var(--success-color);
+}
+
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.portfolio-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.portfolio-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--danger-color);
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.portfolio-item:hover .remove-btn {
+    opacity: 1;
+}
+
+.link-input-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+}

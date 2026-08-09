@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, Camera, Eye, EyeOff, Phone } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +22,9 @@ export default function AuthPage() {
 
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const from = location.state?.from?.pathname || null;
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
@@ -36,7 +39,7 @@ export default function AuthPage() {
     const mappedRole = role === 'photographer' ? 'grapher' : role;
     const result = await loginWithGoogle(credential, mappedRole);
     setLoading(false);
-    if (result.success) navigate(result.redirect || '/');
+    if (result.success) navigate(from || result.redirect || '/');
     else setError(result.message);
   };
 
@@ -54,7 +57,7 @@ export default function AuthPage() {
       const result = await login(email, password);
       setLoading(false);
 
-      if (result.success) navigate(result.redirect || '/');
+      if (result.success) navigate(from || result.redirect || '/');
       else setError(result.message);
     } else {
       if (!email || !password || !fullName || !phoneNumber) {

@@ -67,10 +67,14 @@ export const adminService = {
    * @param {boolean} approved - true = duyệt, false = từ chối
    * @returns {Promise<void>}
    */
-  approveGrapherKyc: (grapherProfileId, approved) =>
+  approveGrapherKyc: (grapherProfileId, approved, rejectReason) =>
     http
-      .post(`/api/admin/graphers/${grapherProfileId}/kyc?approved=${approved}`)
+      .post(`/api/admin/graphers/${grapherProfileId}/kyc`, { approved, rejectReason })
       .then((res) => res.data),
+
+  getApplicationDetail: (grapherProfileId) =>
+    http.get(`/api/admin/graphers/${grapherProfileId}/application`).then((res) => res.data),
+
 
   // ── Bookings ───────────────────────────────────────────────────────────────
   /**
@@ -133,14 +137,21 @@ export const adminService = {
   /**
    * Giải quyết một tranh chấp.
    * @param {string} disputeId - GUID của dispute
-   * @param {string} action - 'refund' | 'warning' | 'resolved'
+   * @param {string} action - 'refund' | 'warning' | 'resolved' | 'split'
    * @param {string} [adminNote] - ghi chú của admin
+   * @param {number} [refundPercent] - tỷ lệ hoàn tiền cho khách (0-100)
    * @returns {Promise<AdminDisputeResponse>}
    */
-  resolveDispute: (disputeId, action, adminNote = '') =>
+  resolveDispute: (disputeId, action, adminNote = '', refundPercent = null) =>
     http
-      .post(`/api/admin/disputes/${disputeId}/resolve`, { action, adminNote })
+      .post(`/api/admin/disputes/${disputeId}/resolve`, { action, adminNote, refundPercent })
       .then((res) => res.data),
+
+  getDisputeAiAnalysis: (disputeId) =>
+    http.get(`/api/admin/disputes/${disputeId}/ai-analysis`).then((res) => res.data),
+
+  getDisputeChatLog: (disputeId) =>
+    http.get(`/api/admin/disputes/${disputeId}/chat-log`).then((res) => res.data),
 
   // ── System Settings ────────────────────────────────────────────────────────
   /**

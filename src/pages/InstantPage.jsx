@@ -6,7 +6,7 @@ import {
     Phone, MessageCircle, Navigation, Timer, Users, CreditCard
 } from 'lucide-react';
 import { useAppData } from '../context/AppDataContext';
-import { formatPrice } from '../data/data';
+import { formatPrice, avatarFallback } from '../data/data';
 import './InstantPage.css';
 
 export default function InstantPage() {
@@ -129,7 +129,7 @@ export default function InstantPage() {
                                 </div>
                                 {instantPhotographers.slice(0, 3).map((p, i) => (
                                     <div key={p.id} className="instant-phone-photographer" style={{ animationDelay: `${0.8 + i * 0.2}s` }}>
-                                        <img src={p.avatar} alt={p.name} />
+                                        <img src={p.avatar || avatarFallback(p.name)} alt={p.name} />
                                         <div className="instant-phone-photographer-info">
                                             <strong>{p.name}</strong>
                                             <span><MapPin size={10} /> {p.location}</span>
@@ -237,7 +237,7 @@ export default function InstantPage() {
                                 <div key={p.id} className="instant-photographer-card" style={{ animationDelay: `${i * 0.1}s` }} id={`instant-card-${p.id}`}>
                                     <div className="instant-card-header">
                                         <div className="instant-card-avatar-wrap">
-                                            <img src={p.avatar} alt={p.name} className="instant-card-avatar" />
+                                            <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="instant-card-avatar" />
                                             <span className="instant-online-indicator" />
                                         </div>
                                         <div className="instant-card-info">
@@ -311,7 +311,7 @@ export default function InstantPage() {
                         <div className="instant-booking-card card-glass">
                             <div className="instant-booking-header">
                                 <div className="instant-booking-photographer">
-                                    <img src={selectedPhotographer.avatar} alt={selectedPhotographer.name} className="avatar" />
+                                    <img src={selectedPhotographer.avatar || avatarFallback(selectedPhotographer.name)} alt={selectedPhotographer.name} className="avatar" />
                                     <div>
                                         <h3>Đặt ngay với {selectedPhotographer.name}</h3>
                                         <span className="instant-booking-location">
@@ -434,7 +434,7 @@ export default function InstantPage() {
                                 <Link to={`/photographer/${p.id}`} key={p.id} className="instant-online-card" style={{ animationDelay: `${i * 0.1}s` }} id={`online-card-${p.id}`}>
                                     <div className="instant-online-card-left">
                                         <div className="instant-online-avatar-wrap">
-                                            <img src={p.avatar} alt={p.name} />
+                                            <img src={p.avatar || avatarFallback(p.name)} alt={p.name} />
                                             <span className="instant-online-indicator" />
                                         </div>
                                     </div>
@@ -487,3 +487,5 @@ export default function InstantPage() {
         </div>
     );
 }
+
+

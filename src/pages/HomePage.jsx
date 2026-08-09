@@ -94,7 +94,7 @@ export default function HomePage() {
                         <div className="hero-cards">
                             {photographers.slice(0, 3).map((p, i) => (
                                 <div key={p.id} className={`hero-photographer-card hero-card-${i + 1}`}>
-                                    <img src={p.avatar} alt={p.name} />
+                                    <img src={p.avatar || avatarFallback(p.name)} alt={p.name} />
                                     <div className="hero-card-info">
                                         <strong>{p.name}</strong>
                                         <span><Star size={12} fill="currentColor" /> {p.rating}</span>
@@ -146,7 +146,7 @@ export default function HomePage() {
                         {photographers.slice(0, 8).map((p, i) => (
                             <Link to={`/photographer/${p.id}`} key={p.id} className="photographer-card" id={`photographer-card-${p.id}`} style={{ animationDelay: `${i * 0.1}s` }}>
                                 <div className="photographer-card-img">
-                                    <img src={p.portfolio?.[0] || p.avatar || ''} alt={p.name} />
+                                    <img src={p.portfolio?.[0] || p.avatar || avatarFallback(p.name)} alt={p.name} />
                                     <div className="photographer-card-overlay">
                                         <span className="btn btn-sm btn-primary">Xem hồ sơ</span>
                                     </div>
@@ -158,7 +158,7 @@ export default function HomePage() {
                                 </div>
                                 <div className="photographer-card-body">
                                     <div className="photographer-card-header">
-                                        <img src={p.avatar} alt={p.name} className="avatar" />
+                                        <img src={p.avatar || avatarFallback(p.name)} alt={p.name} className="avatar" />
                                         <div>
                                             <h4>{p.name}</h4>
                                             <span className="photographer-card-location">
@@ -237,15 +237,15 @@ export default function HomePage() {
                         <div className="instant-visual">
                             <div className="instant-map-preview">
                                 <div className="instant-pin instant-pin-1">
-                                    <img src={photographers[0]?.avatar || ''} alt="" />
+                                    <img src={photographers[0]?.avatar || avatarFallback(photographers[0]?.name)} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-pin instant-pin-2">
-                                    <img src={photographers[2]?.avatar || ''} alt="" />
+                                    <img src={photographers[2]?.avatar || avatarFallback(photographers[2]?.name)} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-pin instant-pin-3">
-                                    <img src={photographers[5]?.avatar || ''} alt="" />
+                                    <img src={photographers[5]?.avatar || avatarFallback(photographers[5]?.name)} alt="" />
                                     <span className="online-pulse" />
                                 </div>
                                 <div className="instant-center-dot" />
@@ -270,7 +270,7 @@ export default function HomePage() {
                                 <div key={preset.id || i} className="preset-card" id={`preset-card-${preset.id || i}`} style={{ animationDelay: `${i * 0.1}s` }}>
                                     <div className="preset-card-img">
                                         <img
-                                            src={imgSrc}
+                                            src={imgSrc || undefined}
                                             alt={preset.name}
                                             onError={(e) => {
                                                 e.currentTarget.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
@@ -373,3 +373,4 @@ export default function HomePage() {
         </div>
     );
 }
+

@@ -47,6 +47,8 @@ export default function CustomerDashboard() {
     const [disputeOrder, setDisputeOrder] = useState(null);
     const [disputeReason, setDisputeReason] = useState('');
     const [disputePriority, setDisputePriority] = useState('Medium');
+    const [disputeEvidence, setDisputeEvidence] = useState([]);
+    const [isUploadingDisputeEvidence, setIsUploadingDisputeEvidence] = useState(false);
     const [isSubmittingDispute, setIsSubmittingDispute] = useState(false);
 
     // Profile Edit State
@@ -260,14 +262,41 @@ export default function CustomerDashboard() {
         setDisputeOrder(order);
         setDisputeReason('');
         setDisputePriority('Medium');
+        setDisputeEvidence([]);
+        setIsUploadingDisputeEvidence(false);
         setShowDisputeModal(true);
+    };
+
+    const handleDisputeEvidenceUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        
+        setIsUploadingDisputeEvidence(true);
+        try {
+            const urls = [];
+            for (const file of files) {
+                const url = await apiClient.uploadImage(file);
+                urls.push(url);
+            }
+            setDisputeEvidence(prev => [...prev, ...urls].slice(0, 5));
+            toast.success('Tải ảnh bằng chứng thành công!');
+        } catch (err) {
+            toast.error('Lỗi khi tải ảnh bằng chứng: ' + (err.message || 'Lỗi'));
+        } finally {
+            setIsUploadingDisputeEvidence(false);
+        }
     };
 
     const handleSubmitDispute = async () => {
         if (!disputeOrder || !disputeReason.trim()) return;
         try {
             setIsSubmittingDispute(true);
-            await apiClient.createDispute({ bookingId: disputeOrder.id, reason: disputeReason.trim(), priority: disputePriority });
+            await apiClient.createDispute({ 
+                bookingId: disputeOrder.id, 
+                reason: disputeReason.trim(), 
+                priority: disputePriority,
+                evidenceImageUrls: disputeEvidence
+            });
             toast.success('Đã gửi khiếu nại. Admin sẽ xử lý sớm.');
             setShowDisputeModal(false);
         } catch (err) {
@@ -875,6 +904,52 @@ export default function CustomerDashboard() {
                                     <div style={{ padding: '0.75rem', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>{selectedOrder.cancellationReason}</div>
                                 </div>
                             )}
+
+                            {selectedOrder.hasDispute && (
+                                <div style={{ 
+                                    marginTop: '0.75rem', 
+                                    padding: '1rem', 
+                                    borderRadius: '8px', 
+                                    background: 'linear-gradient(135deg, rgba(108,92,231,0.06) 0%, rgba(162,155,254,0.06) 100%)', 
+                                    border: '1px solid rgba(108, 92, 231, 0.15)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.5rem'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <strong style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--primary)' }}>
+                                            ⚖️ Khiếu nại & Phân xử
+                                        </strong>
+                                        <span className={`badge ${selectedOrder.disputeStatus === 'Resolved' || selectedOrder.disputeStatus === 'Closed' ? 'badge-success' : 'badge-warning'}`}>
+                                            {selectedOrder.disputeStatus === 'Resolved' || selectedOrder.disputeStatus === 'Closed' ? 'Đã giải quyết' : 'Đang chờ xử lý'}
+                                        </span>
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                        <strong>Lý do khiếu nại:</strong> {selectedOrder.disputeReason}
+                                    </div>
+                                    {(selectedOrder.disputeStatus === 'Resolved' || selectedOrder.disputeStatus === 'Closed') && (
+                                        <div style={{ marginTop: '0.25rem', borderTop: '1px dashed rgba(108, 92, 231, 0.2)', paddingTop: '0.5rem', fontSize: '0.85rem' }}>
+                                            <div style={{ marginBottom: '0.25rem' }}>
+                                                <strong>Quyết định phân xử:</strong>{' '}
+                                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                                                    {selectedOrder.disputeResolution === 'refund' 
+                                                        ? 'Hoàn tiền 100% cho Khách' 
+                                                        : selectedOrder.disputeResolution === 'warning' 
+                                                        ? 'Cảnh báo vi phạm' 
+                                                        : selectedOrder.disputeResolution === 'split' 
+                                                        ? 'Phân chia lại số tiền ký quỹ' 
+                                                        : 'Giải ngân 100% cho Thợ'}
+                                                </span>
+                                            </div>
+                                            {selectedOrder.disputeAdminNote && (
+                                                <div style={{ background: 'var(--bg-secondary)', padding: '0.5rem 0.75rem', borderRadius: '6px', fontStyle: 'italic', marginTop: '0.25rem', color: 'var(--text-color)' }}>
+                                                    💬 Admin: {selectedOrder.disputeAdminNote}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '1.2rem' }}>
                                 <strong>Tổng tiền:</strong>
                                 <strong style={{ color: 'var(--primary)' }}>{formatPrice(selectedOrder.totalAmount)}</strong>
@@ -977,7 +1052,7 @@ export default function CustomerDashboard() {
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 {uploadedImages.map((url, index) => (
                                     <div key={index} style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                        <img src={url} alt="Uploaded review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img src={url || undefined} alt="Uploaded review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         <button 
                                             type="button" 
                                             onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))}
@@ -1050,6 +1125,45 @@ export default function CustomerDashboard() {
                                 disabled={isSubmittingDispute}
                             />
                         </div>
+
+                        <div className="input-group" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Ảnh bằng chứng (tối đa 5 ảnh)</label>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                {disputeEvidence.map((url, index) => (
+                                    <div key={index} style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                        <img src={url} alt="Bằng chứng" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setDisputeEvidence(prev => prev.filter((_, i) => i !== index))}
+                                            style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', padding: 0 }}
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {disputeEvidence.length < 5 && (
+                                    <label style={{ width: '64px', height: '64px', borderRadius: '6px', border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: isUploadingDisputeEvidence ? 'not-allowed' : 'pointer', color: 'var(--text-secondary)' }}>
+                                        {isUploadingDisputeEvidence ? (
+                                            <span style={{ fontSize: '0.65rem' }}>Đang tải...</span>
+                                        ) : (
+                                            <>
+                                                <Upload size={20} />
+                                                <span style={{ fontSize: '0.65rem', marginTop: '2px' }}>Tải ảnh</span>
+                                            </>
+                                        )}
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            multiple 
+                                            onChange={handleDisputeEvidenceUpload} 
+                                            style={{ display: 'none' }} 
+                                            disabled={isUploadingDisputeEvidence}
+                                        />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
                             <button className="btn btn-ghost" onClick={() => setShowDisputeModal(false)} disabled={isSubmittingDispute}>Hủy</button>
                             <button className="btn btn-primary" onClick={handleSubmitDispute} disabled={isSubmittingDispute || !disputeReason.trim()}>
