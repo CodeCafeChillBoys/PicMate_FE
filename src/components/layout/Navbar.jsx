@@ -154,7 +154,7 @@ export default function Navbar() {
                                 id="nav-user-menu"
                             >
                                 {user.avatar ? (
-                                    <img src={user.avatar} alt={user.name} className="user-menu-avatar" />
+                                    <img src={user.avatar || undefined} alt={user.name} className="user-menu-avatar" />
                                 ) : (
                                     <div className="user-menu-avatar-placeholder">
                                         {user.role === 'admin' ? <Shield size={16} /> : <User size={16} />}

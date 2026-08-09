@@ -12,7 +12,5 @@ const tree = googleClientId
   : <App />
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    {tree}
-  </StrictMode>,
+  tree,
 )

@@ -273,7 +273,7 @@ export default function ChatbotWidget() {
                         {/* File preview */}
                         {selectedFile && (
                             <div className="chatbot-file-preview">
-                                <img src={selectedFile.previewUrl} alt="Preview" />
+                                <img src={selectedFile.previewUrl || undefined} alt="Preview" />
                                 <span className="chatbot-file-name">{selectedFile.name}</span>
                                 <button className="chatbot-file-remove" onClick={() => setSelectedFile(null)}>
                                     <X size={14} />

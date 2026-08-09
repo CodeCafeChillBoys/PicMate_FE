@@ -18,6 +18,7 @@ import PhotographerDashboard from './pages/dashboard/PhotographerDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import InstantPage from './pages/InstantPage';
 import PaymentResultPage from './pages/PaymentResultPage';
+import GrapherApplicationForm from './pages/GrapherApplicationForm';
 
 import VietQrPaymentPage from './pages/VietQrPaymentPage';
 
@@ -41,7 +42,11 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />
               <Route path="/photographer/:id" element={<PhotographerProfile />} />
-              <Route path="/booking/:id" element={<BookingPage />} />
+              <Route path="/booking/:id" element={
+                <DirectAccessRoute>
+                  <BookingPage />
+                </DirectAccessRoute>
+              } />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/presets" element={<PresetShop />} />
               <Route path="/instant" element={<InstantPage />} />
@@ -66,6 +71,11 @@ function App() {
               <Route path="/photographer-dashboard" element={
                 <DirectAccessRoute role="photographer">
                   <PhotographerDashboard />
+                </DirectAccessRoute>
+              } />
+              <Route path="/photographer-application" element={
+                <DirectAccessRoute role="photographer">
+                  <GrapherApplicationForm />
                 </DirectAccessRoute>
               } />
               <Route path="/admin-dashboard" element={

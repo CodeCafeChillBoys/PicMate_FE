@@ -93,7 +93,14 @@ export function AuthProvider({ children }) {
     try {
       const response = await apiClient.login(email, password);
       const userData = applyAuthResponse(response);
-      return { success: true, redirect: userData.redirect || '/' };
+      let redirect = userData.redirect || '/';
+      
+      // Photographers always go through application check first
+      if (userData.role === 'photographer') {
+        redirect = '/photographer-application';
+      }
+      
+      return { success: true, redirect };
     } catch (error) {
       return { success: false, message: error.message || 'Email hoặc mật khẩu không đúng!' };
     } finally {
@@ -106,7 +113,14 @@ export function AuthProvider({ children }) {
     try {
       const response = await apiClient.googleAuth(credential, role);
       const userData = applyAuthResponse(response);
-      return { success: true, redirect: userData.redirect || '/' };
+      let redirect = userData.redirect || '/';
+      
+      // Photographers always go through application check first
+      if (userData.role === 'photographer') {
+        redirect = '/photographer-application';
+      }
+      
+      return { success: true, redirect };
     } catch (error) {
       return { success: false, message: error.message || 'Đăng nhập Google thất bại!' };
     } finally {

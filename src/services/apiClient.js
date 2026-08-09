@@ -72,6 +72,16 @@ export const apiClient = {
     const data = await res.json();
     return data.url;
   },
+  submitApplication: (data) => http.post('/api/graphers/me/application', data).then(res => res.data),
 };
-
 export const formatPrice = (price) => `${new Intl.NumberFormat('vi-VN').format(price || 0)}đ`;
+
+export const payoutService = {
+  getMyWallet: () => http.get('/api/payouts/my-wallet').then(res => res.data),
+  updateMyBank: (data) => http.put('/api/payouts/my-bank', data).then(res => res.data),
+  requestPayout: (amount) => http.post('/api/payouts/request', { amount }).then(res => res.data),
+  getMyRequests: () => http.get('/api/payouts/my-requests').then(res => res.data),
+  getAllRequests: (status) => http.get(status !== undefined ? `/api/payouts?status=${status}` : '/api/payouts').then(res => res.data),
+  resolveRequest: (id, data) => http.put(`/api/payouts/${id}/resolve`, data).then(res => res.data),
+  rejectRequest: (id, data) => http.put(`/api/payouts/${id}/reject`, data).then(res => res.data),
+};

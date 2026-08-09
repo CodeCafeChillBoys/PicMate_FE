@@ -162,7 +162,7 @@ export default function PhotographerProfile() {
                                 <div className="portfolio-grid">
                                     {(photographer.portfolio || []).map((img, i) => (
                                         <div key={i} className="portfolio-item" onClick={() => setSelectedImage(img)} id={`portfolio-${i}`}>
-                                            <img src={img} alt={`Portfolio ${i + 1}`} />
+                                            <img src={img || undefined} alt={`Portfolio ${i + 1}`} />
                                             <div className="portfolio-overlay">
                                                 <Camera size={24} />
                                             </div>
@@ -203,7 +203,7 @@ export default function PhotographerProfile() {
                                                 <div className="shopee-review-thumbnails">
                                                     {review.imageUrls.split(',').map((img, idx) => (
                                                         <div key={idx} className="shopee-review-thumb-wrapper" onClick={() => setSelectedImage(img)}>
-                                                            <img src={img} alt={`review-thumb-${idx}`} />
+                                                            <img src={img || undefined} alt={`review-thumb-${idx}`} />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -212,7 +212,7 @@ export default function PhotographerProfile() {
                                                     <div className="shopee-review-thumbnails">
                                                         {photographer.portfolio.slice(0, 3).map((img, idx) => (
                                                             <div key={idx} className="shopee-review-thumb-wrapper" onClick={() => setSelectedImage(img)}>
-                                                                <img src={img} alt={`review-thumb-${idx}`} />
+                                                                <img src={img || undefined} alt={`review-thumb-${idx}`} />
                                                                 {idx === 0 && (
                                                                     <div className="shopee-thumb-video-badge">
                                                                         <span className="play-icon">▶</span>
@@ -304,7 +304,7 @@ export default function PhotographerProfile() {
             {selectedImage && (
                 <div className="lightbox" onClick={() => setSelectedImage(null)} id="lightbox">
                     <button className="lightbox-close" onClick={() => setSelectedImage(null)}><X size={24} /></button>
-                    <img src={selectedImage} alt="Portfolio" />
+                    <img src={selectedImage || undefined} alt="Portfolio" />
                 </div>
             )}
 

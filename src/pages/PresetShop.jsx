@@ -45,7 +45,7 @@ export default function PresetShop() {
                             <div key={preset.id || i} className="preset-shop-card" id={`preset-shop-${preset.id || i}`}>
                                 <div className="preset-shop-card-img">
                                     <img
-                                        src={imgSrc}
+                                        src={imgSrc || undefined}
                                         alt={preset.name}
                                         onError={(e) => {
                                             e.currentTarget.src = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=80';
